@@ -255,6 +255,8 @@
   function saveLocalScores(list) {
     localStorage.setItem('flappy_local_lb', JSON.stringify(list.slice(0, 20)));
   }
+  // One-time migration: dedupe any pre-existing local entries.
+  saveLocalScores(dedupeByName(localScores()));
 
   async function fetchScores() {
     lbStatusEl.textContent = 'loading…';
