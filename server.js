@@ -38,10 +38,20 @@ function saveScores(list) {
   fs.writeFileSync(DB_FILE, JSON.stringify(list, null, 2), 'utf8');
 }
 
+// Keep only the best score per unique name (case-insensitive).
+function dedupeByName(list) {
+  const best = new Map();
+  for (const e of list) {
+    const key = (e.name || '').trim().toLowerCase();
+    if (!key) continue;
+    const prev = best.get(key);
+    if (!prev || e.score > prev.score) best.set(key, e);
+  }
+  return [...best.values()].sort((a, b) => b.score - a.score);
+}
+
 app.get('/api/scores', (req, res) => {
-  const list = loadScores()
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 20);
+  const list = dedupeByName(loadScores()).slice(0, 20);
   res.json(list);
 });
 
@@ -53,13 +63,12 @@ app.post('/api/scores', (req, res) => {
   name = name.trim().slice(0, MAX_NAME) || 'Anon';
   score = Math.max(0, Math.min(99999, Math.floor(score)));
 
-  const list = loadScores();
-  list.push({ name, score, at: Date.now() });
-  list.sort((a, b) => b.score - a.score);
-  saveScores(list.slice(0, MAX_ENTRIES));
+  const all = loadScores();
+  all.push({ name, score, at: Date.now() });
+  const deduped = dedupeByName(all);
+  saveScores(deduped.slice(0, MAX_ENTRIES));
 
-  const top = list.slice(0, 20);
-  res.json({ ok: true, top });
+  res.json({ ok: true, top: deduped.slice(0, 20) });
 });
 
 app.listen(PORT, () => {
