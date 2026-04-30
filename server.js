@@ -112,6 +112,19 @@ app.get('/api/scores', (req, res) => {
   res.json(list);
 });
 
+// Quick debug: total stored entries + DB file path. Useful for verifying
+// that the Railway volume is mounted correctly.
+app.get('/api/health', (req, res) => {
+  const list = loadScores();
+  res.json({
+    ok: true,
+    total: list.length,
+    unique: dedupeByName(list).length,
+    dbFile: DB_FILE,
+    persistent: DB_FILE !== path.join(__dirname, 'scores.json'),
+  });
+});
+
 // Issue a fresh play-session token. Required before submitting a score.
 app.post('/api/session', (req, res) => {
   const ip = (req.ip || 'unknown').toString();
