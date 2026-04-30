@@ -304,7 +304,7 @@
   const STATE_PLAY = 1;
   const STATE_OVER = 2;
 
-  let state, bird, pipes, frame, score, best, groundOffset, overTimer, runStartedAt, runDuration;
+  let state, bird, pipes, frame, score, best, groundOffset, overTimer, runStartedAt, runDuration, runToken;
   best = parseInt(localStorage.getItem('flappy_best') || '0', 10);
 
   // ===== Leaderboard =====
@@ -353,13 +353,12 @@
   async function submitScore(score) {
     const name = (nameInput.value || '').trim().slice(0, 16) || 'Anon';
     const skinPayload = { color: skin.color, style: skin.style, hat: skin.hat };
-    const duration = runDuration || 0;
     if (lb.online) {
       try {
         const res = await fetch(API_BASE + '/api/scores', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, score, skin: skinPayload, duration }),
+          body: JSON.stringify({ name, score, skin: skinPayload, token: runToken }),
         });
         if (!res.ok) throw new Error('http ' + res.status);
         const data = await res.json();
@@ -716,6 +715,12 @@
     if (state === STATE_READY) {
       state = STATE_PLAY;
       runStartedAt = Date.now();
+      // Request a server-side play session so anti-cheat can verify duration.
+      runToken = null;
+      fetch(API_BASE + '/api/session', { method: 'POST' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d && d.token) runToken = d.token; })
+        .catch(() => {});
     }
     if (state === STATE_PLAY) {
       bird.v = FLAP;

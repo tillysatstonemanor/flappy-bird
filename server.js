@@ -1,21 +1,30 @@
-// Tiny leaderboard server for Flappy Bird.
+// Tiny leaderboard server for Flappy Bird with anti-cheat.
 // Usage: npm install && npm start  -> http://localhost:3000
 
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_FILE = process.env.DB_FILE || path.join(__dirname, 'scores.json');
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
+
 const MAX_NAME = 16;
 const MAX_ENTRIES = 100;
-const MAX_SCORE = 500;            // sane upper bound for a flappy bird run
-const MS_PER_SCORE = 1300;        // a pipe takes ~1.5s; allow a little grace
-const MS_OVERHEAD = 1500;         // initial pre-first-pipe time
+const MAX_SCORE = 500;
+const MS_PER_SCORE = 1300;       // a pipe takes ~1.5s; allow grace
+const MS_OVERHEAD = 1500;        // initial pre-first-pipe time
+const MS_SESSION_TTL = 30 * 60_000;
 const RATE_WINDOW_MS = 60_000;
-const RATE_MAX = 15;              // submissions per window per IP
+const RATE_MAX = 30;             // any endpoint, per IP per min
+
+// Names that have been caught cheating. They will be silently rejected and
+// any historical entries scrubbed at startup.
+const BANNED_NAMES = new Set([
+  'yamayhamayha',
+]);
 
 app.set('trust proxy', true);
 app.use(express.json({ limit: '4kb' }));
@@ -63,23 +72,38 @@ function sanitizeSkin(s) {
   return { color, style, hat };
 }
 
-// In-memory rate limiter
-const submissions = new Map(); // ip -> [timestamps]
+// Per-IP rate limiter
+const rate = new Map(); // ip -> [timestamps]
 function rateLimited(ip) {
   const now = Date.now();
-  const arr = (submissions.get(ip) || []).filter(t => now - t < RATE_WINDOW_MS);
+  const arr = (rate.get(ip) || []).filter(t => now - t < RATE_WINDOW_MS);
   arr.push(now);
-  submissions.set(ip, arr);
+  rate.set(ip, arr);
   return arr.length > RATE_MAX;
 }
 
-// One-time startup cleanup: remove the score-100 cheat entry.
+// Server-issued session tokens. Client must request one before submitting,
+// and the server measures real elapsed time itself — clients can't fake it.
+const sessions = new Map(); // token -> { createdAt, ip, used }
+
+function gcSessions() {
+  const now = Date.now();
+  for (const [t, s] of sessions) {
+    if (now - s.createdAt > MS_SESSION_TTL) sessions.delete(t);
+  }
+}
+
+// Startup cleanup: remove any cheat entries (score-100 spam, banned names).
 (function startupCleanup() {
   const list = loadScores();
-  const cleaned = list.filter(e => e.score !== 100);
+  const cleaned = list.filter(e => {
+    if (e.score === 100 && (!e.duration || e.duration === 0)) return false;
+    if (BANNED_NAMES.has((e.name || '').toLowerCase())) return false;
+    return true;
+  });
   if (cleaned.length !== list.length) {
     saveScores(cleaned);
-    console.log(`Startup cleanup: removed ${list.length - cleaned.length} score-100 entries`);
+    console.log(`Startup cleanup: removed ${list.length - cleaned.length} cheat entries`);
   }
 })();
 
@@ -88,37 +112,57 @@ app.get('/api/scores', (req, res) => {
   res.json(list);
 });
 
+// Issue a fresh play-session token. Required before submitting a score.
+app.post('/api/session', (req, res) => {
+  const ip = (req.ip || 'unknown').toString();
+  if (rateLimited(ip)) return res.status(429).json({ error: 'too many requests' });
+  gcSessions();
+  const token = crypto.randomBytes(16).toString('hex');
+  sessions.set(token, { createdAt: Date.now(), ip, used: false });
+  res.json({ token });
+});
+
 app.post('/api/scores', (req, res) => {
   const ip = (req.ip || 'unknown').toString();
-  if (rateLimited(ip)) {
-    return res.status(429).json({ error: 'too many requests' });
-  }
+  if (rateLimited(ip)) return res.status(429).json({ error: 'too many requests' });
 
-  let { name, score, skin, duration } = req.body || {};
+  let { name, score, skin, token } = req.body || {};
   if (typeof name !== 'string' || typeof score !== 'number') {
     return res.status(400).json({ error: 'invalid payload' });
   }
   name = name.trim().slice(0, MAX_NAME) || 'Anon';
   score = Math.floor(score);
 
-  // Sanity: score must be in plausible range.
+  if (BANNED_NAMES.has(name.toLowerCase())) {
+    return res.status(403).json({ error: 'name banned' });
+  }
   if (score < 0 || score > MAX_SCORE) {
     return res.status(400).json({ error: 'score out of range' });
   }
 
-  // Time-of-play check: anything meaningful must come with a play
-  // duration that is physically achievable given the pipe spawn rate.
+  // Server-side timing check via session token.
   if (score > 3) {
-    if (typeof duration !== 'number' || !isFinite(duration)) {
-      return res.status(400).json({ error: 'missing duration' });
+    if (typeof token !== 'string' || !sessions.has(token)) {
+      return res.status(400).json({ error: 'invalid or missing session' });
     }
+    const sess = sessions.get(token);
+    if (sess.used) return res.status(400).json({ error: 'session already used' });
+    if (sess.ip !== ip) return res.status(403).json({ error: 'session ip mismatch' });
+    const realDuration = Date.now() - sess.createdAt;
     const minMs = MS_OVERHEAD + score * MS_PER_SCORE;
-    if (duration < minMs) {
-      return res.status(400).json({ error: 'duration too short for score' });
+    if (realDuration < minMs) {
+      return res.status(400).json({
+        error: 'too fast',
+        needMs: minMs,
+        gotMs: realDuration,
+      });
     }
-    if (duration > 60 * 60 * 1000) {
-      return res.status(400).json({ error: 'duration too long' });
+    if (realDuration > MS_SESSION_TTL) {
+      return res.status(400).json({ error: 'session expired' });
     }
+    sess.used = true;
+    // Consume the session so it can't be reused.
+    sessions.delete(token);
   }
 
   const sk = sanitizeSkin(skin);
