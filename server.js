@@ -55,16 +55,26 @@ app.get('/api/scores', (req, res) => {
   res.json(list);
 });
 
+function sanitizeSkin(s) {
+  if (!s || typeof s !== 'object') return null;
+  const color = (typeof s.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(s.color))
+    ? s.color : '#f7d51d';
+  const style = typeof s.style === 'string' ? s.style.slice(0, 20) : 'Classic';
+  const hat = typeof s.hat === 'string' ? s.hat.slice(0, 20) : 'None';
+  return { color, style, hat };
+}
+
 app.post('/api/scores', (req, res) => {
-  let { name, score } = req.body || {};
+  let { name, score, skin } = req.body || {};
   if (typeof name !== 'string' || typeof score !== 'number') {
     return res.status(400).json({ error: 'invalid payload' });
   }
   name = name.trim().slice(0, MAX_NAME) || 'Anon';
   score = Math.max(0, Math.min(99999, Math.floor(score)));
+  const sk = sanitizeSkin(skin);
 
   const all = loadScores();
-  all.push({ name, score, at: Date.now() });
+  all.push({ name, score, skin: sk, at: Date.now() });
   const deduped = dedupeByName(all);
   saveScores(deduped.slice(0, MAX_ENTRIES));
 

@@ -158,6 +158,7 @@
   #lbList .rank { opacity: 0.7; width: 24px; }
   #lbList .name { flex: 1; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #lbList .score { font-variant-numeric: tabular-nums; }
+  #lbList canvas.avatar { display: block; flex-shrink: 0; image-rendering: -moz-crisp-edges; }
   #lbStatus { font-size: 11px; opacity: 0.6; margin-top: 8px; text-align: center; }
   #refreshBtn {
     width: 100%;
@@ -276,12 +277,13 @@
 
   async function submitScore(score) {
     const name = (nameInput.value || '').trim().slice(0, 16) || 'Anon';
+    const skinPayload = { color: skin.color, style: skin.style, hat: skin.hat };
     if (lb.online) {
       try {
         const res = await fetch(API_BASE + '/api/scores', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, score }),
+          body: JSON.stringify({ name, score, skin: skinPayload }),
         });
         if (!res.ok) throw new Error('http ' + res.status);
         const data = await res.json();
@@ -294,7 +296,7 @@
       }
     }
     const list = localScores();
-    list.push({ name, score, at: Date.now() });
+    list.push({ name, score, skin: skinPayload, at: Date.now() });
     const deduped = dedupeByName(list);
     saveLocalScores(deduped);
     lb.list = deduped.slice(0, 20);
@@ -326,8 +328,24 @@
       if (highlightName && entry.name === highlightName && entry.score === highlightScore) {
         li.className = 'me';
       }
-      li.innerHTML = `<span class="rank">${i + 1}.</span><span class="name"></span><span class="score">${entry.score}</span>`;
-      li.querySelector('.name').textContent = entry.name;
+      const rank = document.createElement('span');
+      rank.className = 'rank';
+      rank.textContent = (i + 1) + '.';
+      const av = document.createElement('canvas');
+      av.className = 'avatar';
+      av.width = 36; av.height = 36;
+      const ac = av.getContext('2d');
+      drawBirdAt(ac, 18, 22, entry.skin || {}, { rot: 0, flapTimer: 0, frame: 0 });
+      const nm = document.createElement('span');
+      nm.className = 'name';
+      nm.textContent = entry.name;
+      const sc = document.createElement('span');
+      sc.className = 'score';
+      sc.textContent = entry.score;
+      li.appendChild(rank);
+      li.appendChild(av);
+      li.appendChild(nm);
+      li.appendChild(sc);
       lbListEl.appendChild(li);
     });
   }
@@ -337,7 +355,11 @@
   // ===== Customization =====
   const PRESETS = ['#f7d51d','#ff6b6b','#5ec8ff','#7cf26b','#c77dff','#ff9b29','#ffffff','#222222','#ff4fa3','#39e6c8'];
   const STYLES = ['Classic','Round','Sleek','Angry'];
-  const HATS = ['None','Crown','Top Hat','Party','Wizard','Cap','Halo','Propeller','Cowboy','Mustache'];
+  const HATS = [
+    'None','Crown','Royal Crown','Top Hat','Fedora','Party','Wizard','Cap','Beanie',
+    'Halo','Propeller','Cowboy','Pirate','Knight','Flower','Banana','Leaf','Cone',
+    'Egg','Plant','Devil','Antenna','Bow','Tin Foil','Mustache'
+  ];
   const saved = JSON.parse(localStorage.getItem('flappy_skin') || '{}');
   const skin = {
     color: saved.color || '#f7d51d',
@@ -766,242 +788,426 @@
   }
 
   function drawBird() {
-    ctx.save();
-    ctx.translate(bird.x, bird.y);
-    ctx.rotate(bird.rot);
+    drawBirdAt(ctx, bird.x, bird.y, skin, {
+      rot: bird.rot, flapTimer: bird.flapTimer, frame: frame
+    });
+  }
 
-    const body = skin.color;
+  // Reusable bird renderer — used by main game and leaderboard avatars.
+  function drawBirdAt(c, cx, cy, sk, opts) {
+    opts = opts || {};
+    const rot = opts.rot || 0;
+    const flapTimer = opts.flapTimer || 0;
+    const frameNum = opts.frame || 0;
+    const style = (sk && sk.style) || 'Classic';
+    const body = (sk && sk.color) || '#f7d51d';
     const dark = shade(body, -60);
     const light = shade(body, 60);
-    const wingY = bird.flapTimer > 4 ? -6 : (bird.flapTimer > 0 ? 0 : 4);
+    const wingY = flapTimer > 4 ? -6 : (flapTimer > 0 ? 0 : 4);
 
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
+    c.save();
+    c.translate(cx, cy);
+    c.rotate(rot);
+    c.strokeStyle = '#000';
+    c.lineWidth = 2;
 
-    if (skin.style === 'Classic') {
-      // round body, belly, wing, eye, beak
-      ctx.fillStyle = body;
-      ctx.beginPath(); ctx.arc(0, 0, BIRD_R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = light;
-      ctx.beginPath(); ctx.arc(-2, 4, BIRD_R - 5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = dark;
-      ctx.beginPath(); ctx.ellipse(-3, wingY, 8, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      drawEye(5, -4, 5, 2.5);
-      drawBeak('#ff9b29');
-    } else if (skin.style === 'Round') {
-      // chubby — bigger body, no wing detail, simpler
-      ctx.fillStyle = body;
-      ctx.beginPath(); ctx.arc(0, 0, BIRD_R + 1, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = light;
-      ctx.beginPath(); ctx.arc(0, 5, BIRD_R - 4, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = dark;
-      ctx.beginPath(); ctx.ellipse(-4, wingY + 1, 7, 6, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      drawEye(6, -3, 4.5, 2.2);
-      drawBeak('#ffb84d');
-    } else if (skin.style === 'Sleek') {
-      // ellipse body
-      ctx.fillStyle = body;
-      ctx.beginPath(); ctx.ellipse(0, 0, BIRD_R + 2, BIRD_R - 3, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = light;
-      ctx.beginPath(); ctx.ellipse(-1, 3, BIRD_R - 3, BIRD_R - 7, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = dark;
-      ctx.beginPath(); ctx.ellipse(-5, wingY, 9, 4, -0.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      drawEye(7, -3, 4, 2);
-      drawBeak('#ffcb52', 22);
-    } else if (skin.style === 'Angry') {
-      // red-tinted with eyebrow
-      ctx.fillStyle = body;
-      ctx.beginPath(); ctx.arc(0, 0, BIRD_R, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = light;
-      ctx.beginPath(); ctx.arc(-2, 4, BIRD_R - 5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = dark;
-      ctx.beginPath(); ctx.ellipse(-3, wingY, 8, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      drawEye(5, -4, 5, 2.5);
-      // eyebrow
-      ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(-1, -10); ctx.lineTo(11, -6); ctx.stroke();
-      ctx.lineWidth = 2;
-      drawBeak('#ff5b29');
+    if (style === 'Classic') {
+      c.fillStyle = body;
+      c.beginPath(); c.arc(0, 0, BIRD_R, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.fillStyle = light;
+      c.beginPath(); c.arc(-2, 4, BIRD_R - 5, 0, Math.PI * 2); c.fill();
+      c.fillStyle = dark;
+      c.beginPath(); c.ellipse(-3, wingY, 8, 5, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+      drawEyeOn(c, 5, -4, 5, 2.5);
+      drawBeakOn(c, '#ff9b29');
+    } else if (style === 'Round') {
+      c.fillStyle = body;
+      c.beginPath(); c.arc(0, 0, BIRD_R + 1, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.fillStyle = light;
+      c.beginPath(); c.arc(0, 5, BIRD_R - 4, 0, Math.PI * 2); c.fill();
+      c.fillStyle = dark;
+      c.beginPath(); c.ellipse(-4, wingY + 1, 7, 6, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+      drawEyeOn(c, 6, -3, 4.5, 2.2);
+      drawBeakOn(c, '#ffb84d');
+    } else if (style === 'Sleek') {
+      c.fillStyle = body;
+      c.beginPath(); c.ellipse(0, 0, BIRD_R + 2, BIRD_R - 3, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.fillStyle = light;
+      c.beginPath(); c.ellipse(-1, 3, BIRD_R - 3, BIRD_R - 7, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = dark;
+      c.beginPath(); c.ellipse(-5, wingY, 9, 4, -0.2, 0, Math.PI * 2); c.fill(); c.stroke();
+      drawEyeOn(c, 7, -3, 4, 2);
+      drawBeakOn(c, '#ffcb52', 22);
+    } else if (style === 'Angry') {
+      c.fillStyle = body;
+      c.beginPath(); c.arc(0, 0, BIRD_R, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.fillStyle = light;
+      c.beginPath(); c.arc(-2, 4, BIRD_R - 5, 0, Math.PI * 2); c.fill();
+      c.fillStyle = dark;
+      c.beginPath(); c.ellipse(-3, wingY, 8, 5, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+      drawEyeOn(c, 5, -4, 5, 2.5);
+      c.strokeStyle = '#000'; c.lineWidth = 3;
+      c.beginPath(); c.moveTo(-1, -10); c.lineTo(11, -6); c.stroke();
+      c.lineWidth = 2;
+      drawBeakOn(c, '#ff5b29');
     }
-    drawHat(skin.hat);
-    ctx.restore();
+    drawHatOn(c, sk && sk.hat, frameNum);
+    c.restore();
   }
 
   // Hat / accessory drawing — drawn in bird-local rotated space.
   // Bird body radius ~14, top of head at y = -BIRD_R (= -14).
-  function drawHat(hat) {
+  function drawHatOn(c, hat, frameNum) {
     if (!hat || hat === 'None') return;
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#000';
+    c.lineWidth = 2;
+    c.strokeStyle = '#000';
     const top = -BIRD_R; // -14
 
     if (hat === 'Crown') {
-      ctx.fillStyle = '#ffd84d';
-      ctx.beginPath();
-      ctx.moveTo(-10, top);
-      ctx.lineTo(-10, top - 10);
-      ctx.lineTo(-6, top - 4);
-      ctx.lineTo(-2, top - 12);
-      ctx.lineTo(2, top - 4);
-      ctx.lineTo(6, top - 12);
-      ctx.lineTo(10, top - 4);
-      ctx.lineTo(10, top - 10);
-      ctx.lineTo(10, top);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      // gems
-      ctx.fillStyle = '#ff3b6b';
-      ctx.beginPath(); ctx.arc(0, top - 2, 1.6, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#5ec8ff';
-      ctx.beginPath(); ctx.arc(-7, top - 2, 1.2, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(7, top - 2, 1.2, 0, Math.PI * 2); ctx.fill();
+      c.fillStyle = '#ffd84d';
+      c.beginPath();
+      c.moveTo(-10, top);
+      c.lineTo(-10, top - 10);
+      c.lineTo(-6, top - 4);
+      c.lineTo(-2, top - 12);
+      c.lineTo(2, top - 4);
+      c.lineTo(6, top - 12);
+      c.lineTo(10, top - 4);
+      c.lineTo(10, top - 10);
+      c.lineTo(10, top);
+      c.closePath();
+      c.fill(); c.stroke();
+      c.fillStyle = '#ff3b6b';
+      c.beginPath(); c.arc(0, top - 2, 1.6, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#5ec8ff';
+      c.beginPath(); c.arc(-7, top - 2, 1.2, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(7, top - 2, 1.2, 0, Math.PI * 2); c.fill();
+    } else if (hat === 'Royal Crown') {
+      // taller, regal crown with red velvet base
+      c.fillStyle = '#c8232c';
+      c.fillRect(-11, top - 4, 22, 4);
+      c.strokeRect(-11, top - 4, 22, 4);
+      c.fillStyle = '#ffd84d';
+      c.beginPath();
+      c.moveTo(-11, top - 4);
+      c.lineTo(-11, top - 16);
+      c.lineTo(-6, top - 9);
+      c.lineTo(-3, top - 18);
+      c.lineTo(0, top - 10);
+      c.lineTo(3, top - 18);
+      c.lineTo(6, top - 9);
+      c.lineTo(11, top - 16);
+      c.lineTo(11, top - 4);
+      c.closePath();
+      c.fill(); c.stroke();
+      // jewels
+      c.fillStyle = '#5ec8ff'; c.beginPath(); c.arc(-7, top - 14, 1.3, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#ff3b6b'; c.beginPath(); c.arc(0, top - 16, 1.6, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#7cf26b'; c.beginPath(); c.arc(7, top - 14, 1.3, 0, Math.PI * 2); c.fill();
     } else if (hat === 'Top Hat') {
-      ctx.fillStyle = '#222';
-      // brim
-      ctx.fillRect(-12, top - 2, 24, 3);
-      ctx.strokeRect(-12, top - 2, 24, 3);
-      // crown
-      ctx.fillRect(-7, top - 14, 14, 12);
-      ctx.strokeRect(-7, top - 14, 14, 12);
-      // band
-      ctx.fillStyle = '#c8232c';
-      ctx.fillRect(-7, top - 5, 14, 2);
+      c.fillStyle = '#222';
+      c.fillRect(-12, top - 2, 24, 3);
+      c.strokeRect(-12, top - 2, 24, 3);
+      c.fillRect(-7, top - 14, 14, 12);
+      c.strokeRect(-7, top - 14, 14, 12);
+      c.fillStyle = '#c8232c';
+      c.fillRect(-7, top - 5, 14, 2);
+    } else if (hat === 'Fedora') {
+      c.fillStyle = '#5a3a1f';
+      c.beginPath(); c.ellipse(0, top, 14, 3, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.beginPath();
+      c.moveTo(-8, top - 1);
+      c.quadraticCurveTo(-9, top - 10, -2, top - 11);
+      c.quadraticCurveTo(2, top - 13, 8, top - 11);
+      c.quadraticCurveTo(9, top - 5, 8, top - 1);
+      c.closePath();
+      c.fill(); c.stroke();
+      c.fillStyle = '#222';
+      c.fillRect(-8, top - 3, 16, 2);
     } else if (hat === 'Party') {
-      // cone
-      ctx.fillStyle = '#ff4fa3';
-      ctx.beginPath();
-      ctx.moveTo(-9, top);
-      ctx.lineTo(9, top);
-      ctx.lineTo(0, top - 18);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      // stripes
-      ctx.fillStyle = '#fff';
+      c.fillStyle = '#ff4fa3';
+      c.beginPath();
+      c.moveTo(-9, top); c.lineTo(9, top); c.lineTo(0, top - 18);
+      c.closePath();
+      c.fill(); c.stroke();
+      c.fillStyle = '#fff';
       for (let i = 0; i < 3; i++) {
-        ctx.beginPath();
-        ctx.moveTo(-7 + i * 5, top - 1);
-        ctx.lineTo(-3 + i * 5, top - 1);
-        ctx.lineTo(0 + i * 3, top - 18 + i * 4);
-        ctx.closePath();
-        ctx.fill();
+        c.beginPath();
+        c.moveTo(-7 + i * 5, top - 1);
+        c.lineTo(-3 + i * 5, top - 1);
+        c.lineTo(0 + i * 3, top - 18 + i * 4);
+        c.closePath();
+        c.fill();
       }
-      // pom-pom
-      ctx.fillStyle = '#ffe14d';
-      ctx.beginPath(); ctx.arc(0, top - 19, 2.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      c.fillStyle = '#ffe14d';
+      c.beginPath(); c.arc(0, top - 19, 2.5, 0, Math.PI * 2); c.fill(); c.stroke();
     } else if (hat === 'Wizard') {
-      ctx.fillStyle = '#3a3aa8';
-      ctx.beginPath();
-      ctx.moveTo(-11, top);
-      ctx.lineTo(11, top);
-      ctx.lineTo(4, top - 22);
-      ctx.quadraticCurveTo(2, top - 18, 6, top - 12);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      // stars
-      ctx.fillStyle = '#ffe14d';
+      c.fillStyle = '#3a3aa8';
+      c.beginPath();
+      c.moveTo(-11, top); c.lineTo(11, top); c.lineTo(4, top - 22);
+      c.quadraticCurveTo(2, top - 18, 6, top - 12);
+      c.closePath();
+      c.fill(); c.stroke();
+      c.fillStyle = '#ffe14d';
       [[-3, top - 8], [2, top - 14], [-5, top - 3]].forEach(([sx, sy]) => {
-        ctx.beginPath(); ctx.arc(sx, sy, 1.3, 0, Math.PI * 2); ctx.fill();
+        c.beginPath(); c.arc(sx, sy, 1.3, 0, Math.PI * 2); c.fill();
       });
-      // brim
-      ctx.fillStyle = '#3a3aa8';
-      ctx.fillRect(-13, top - 1, 26, 3);
-      ctx.strokeRect(-13, top - 1, 26, 3);
+      c.fillStyle = '#3a3aa8';
+      c.fillRect(-13, top - 1, 26, 3);
+      c.strokeRect(-13, top - 1, 26, 3);
     } else if (hat === 'Cap') {
-      // baseball cap
-      ctx.fillStyle = '#c8232c';
-      // crown (half ellipse)
-      ctx.beginPath();
-      ctx.ellipse(-2, top - 1, 10, 8, 0, Math.PI, 0);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      // brim
-      ctx.beginPath();
-      ctx.ellipse(6, top, 9, 3, 0, Math.PI, 0);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      // button
-      ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(-2, top - 8, 1.4, 0, Math.PI * 2); ctx.fill();
+      c.fillStyle = '#c8232c';
+      c.beginPath(); c.ellipse(-2, top - 1, 10, 8, 0, Math.PI, 0); c.closePath();
+      c.fill(); c.stroke();
+      c.beginPath(); c.ellipse(6, top, 9, 3, 0, Math.PI, 0); c.closePath();
+      c.fill(); c.stroke();
+      c.fillStyle = '#fff';
+      c.beginPath(); c.arc(-2, top - 8, 1.4, 0, Math.PI * 2); c.fill();
+    } else if (hat === 'Beanie') {
+      c.fillStyle = '#5ec8ff';
+      c.beginPath(); c.ellipse(0, top - 2, 11, 8, 0, Math.PI, 0); c.closePath();
+      c.fill(); c.stroke();
+      c.fillStyle = '#fff';
+      c.fillRect(-11, top - 2, 22, 3);
+      c.strokeRect(-11, top - 2, 22, 3);
+      c.fillStyle = '#fff';
+      c.beginPath(); c.arc(0, top - 11, 3, 0, Math.PI * 2); c.fill(); c.stroke();
     } else if (hat === 'Halo') {
-      ctx.strokeStyle = '#ffe14d';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.ellipse(0, top - 6, 11, 3.5, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,225,77,0.5)';
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.ellipse(0, top - 6, 11, 3.5, 0, 0, Math.PI * 2);
-      ctx.stroke();
+      c.strokeStyle = 'rgba(255,225,77,0.5)';
+      c.lineWidth = 6;
+      c.beginPath(); c.ellipse(0, top - 6, 11, 3.5, 0, 0, Math.PI * 2); c.stroke();
+      c.strokeStyle = '#ffe14d';
+      c.lineWidth = 3;
+      c.beginPath(); c.ellipse(0, top - 6, 11, 3.5, 0, 0, Math.PI * 2); c.stroke();
     } else if (hat === 'Propeller') {
-      // beanie
-      ctx.fillStyle = '#3aa84a';
-      ctx.beginPath();
-      ctx.ellipse(0, top - 1, 10, 7, 0, Math.PI, 0);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#c8232c';
-      ctx.fillRect(-10, top - 1, 20, 2);
-      // stick
-      ctx.fillStyle = '#222';
-      ctx.fillRect(-1, top - 12, 2, 5);
-      // propeller (spins)
-      const spin = (frame || 0) * 0.5;
-      ctx.save();
-      ctx.translate(0, top - 12);
-      ctx.rotate(spin);
-      ctx.fillStyle = '#ffe14d';
-      ctx.fillRect(-9, -1.5, 18, 3);
-      ctx.strokeRect(-9, -1.5, 18, 3);
-      ctx.restore();
+      c.fillStyle = '#3aa84a';
+      c.beginPath(); c.ellipse(0, top - 1, 10, 7, 0, Math.PI, 0); c.closePath();
+      c.fill(); c.stroke();
+      c.fillStyle = '#c8232c';
+      c.fillRect(-10, top - 1, 20, 2);
+      c.fillStyle = '#222';
+      c.fillRect(-1, top - 12, 2, 5);
+      const spin = (frameNum || 0) * 0.5;
+      c.save();
+      c.translate(0, top - 12);
+      c.rotate(spin);
+      c.fillStyle = '#ffe14d';
+      c.fillRect(-9, -1.5, 18, 3);
+      c.strokeRect(-9, -1.5, 18, 3);
+      c.restore();
     } else if (hat === 'Cowboy') {
-      ctx.fillStyle = '#8b5a2b';
-      // brim
-      ctx.beginPath();
-      ctx.ellipse(0, top, 16, 4, 0, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
-      // crown
-      ctx.beginPath();
-      ctx.moveTo(-8, top - 1);
-      ctx.quadraticCurveTo(-9, top - 12, 0, top - 13);
-      ctx.quadraticCurveTo(9, top - 12, 8, top - 1);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      // band
-      ctx.fillStyle = '#222';
-      ctx.fillRect(-8, top - 3, 16, 2);
+      c.fillStyle = '#8b5a2b';
+      c.beginPath(); c.ellipse(0, top, 16, 4, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.beginPath();
+      c.moveTo(-8, top - 1);
+      c.quadraticCurveTo(-9, top - 12, 0, top - 13);
+      c.quadraticCurveTo(9, top - 12, 8, top - 1);
+      c.closePath();
+      c.fill(); c.stroke();
+      c.fillStyle = '#222';
+      c.fillRect(-8, top - 3, 16, 2);
+    } else if (hat === 'Pirate') {
+      // bandana
+      c.fillStyle = '#222';
+      c.beginPath();
+      c.moveTo(-13, top + 1);
+      c.lineTo(13, top + 1);
+      c.lineTo(11, top - 6);
+      c.quadraticCurveTo(0, top - 9, -11, top - 6);
+      c.closePath();
+      c.fill(); c.stroke();
+      // tied knot
+      c.beginPath();
+      c.moveTo(13, top - 1);
+      c.lineTo(20, top - 4);
+      c.lineTo(20, top + 4);
+      c.closePath();
+      c.fill(); c.stroke();
+      // skull
+      c.fillStyle = '#fff';
+      c.beginPath(); c.arc(0, top - 4, 2.5, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#222';
+      c.beginPath(); c.arc(-1, top - 4, 0.6, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(1, top - 4, 0.6, 0, Math.PI * 2); c.fill();
+    } else if (hat === 'Knight') {
+      // helmet
+      c.fillStyle = '#9aa3ad';
+      c.beginPath();
+      c.moveTo(-11, top + 2);
+      c.lineTo(-11, top - 10);
+      c.quadraticCurveTo(0, top - 16, 11, top - 10);
+      c.lineTo(11, top + 2);
+      c.closePath();
+      c.fill(); c.stroke();
+      // visor slit
+      c.fillStyle = '#222';
+      c.fillRect(-9, top - 5, 18, 2);
+      // plume
+      c.fillStyle = '#c8232c';
+      c.beginPath();
+      c.moveTo(0, top - 13);
+      c.quadraticCurveTo(8, top - 22, 4, top - 26);
+      c.quadraticCurveTo(0, top - 20, -2, top - 13);
+      c.closePath();
+      c.fill(); c.stroke();
+    } else if (hat === 'Flower') {
+      // stem
+      c.strokeStyle = '#3aa84a';
+      c.lineWidth = 2;
+      c.beginPath(); c.moveTo(0, top); c.lineTo(0, top - 8); c.stroke();
+      c.strokeStyle = '#000';
+      // petals
+      c.fillStyle = '#ff4fa3';
+      [[0,-14],[5,-10],[5,-4],[0,0],[-5,-4],[-5,-10]].forEach(([px, py]) => {
+        c.beginPath(); c.arc(px, top - 8 + py + 8, 3, 0, Math.PI * 2); c.fill(); c.stroke();
+      });
+      c.fillStyle = '#ffe14d';
+      c.beginPath(); c.arc(0, top - 12, 2, 0, Math.PI * 2); c.fill(); c.stroke();
+      // leaf
+      c.fillStyle = '#3aa84a';
+      c.beginPath(); c.ellipse(4, top - 4, 3, 1.5, 0.5, 0, Math.PI * 2); c.fill(); c.stroke();
+    } else if (hat === 'Banana') {
+      c.fillStyle = '#ffe14d';
+      c.beginPath();
+      c.moveTo(-12, top - 2);
+      c.quadraticCurveTo(0, top - 14, 12, top - 2);
+      c.quadraticCurveTo(0, top - 8, -12, top - 2);
+      c.closePath();
+      c.fill(); c.stroke();
+      c.fillStyle = '#3b2a1a';
+      c.fillRect(11, top - 3, 3, 2);
+    } else if (hat === 'Leaf') {
+      c.fillStyle = '#3aa84a';
+      c.beginPath();
+      c.moveTo(-10, top);
+      c.quadraticCurveTo(-2, top - 16, 10, top - 2);
+      c.quadraticCurveTo(0, top - 6, -10, top);
+      c.closePath();
+      c.fill(); c.stroke();
+      c.strokeStyle = '#2a7a30';
+      c.lineWidth = 1;
+      c.beginPath(); c.moveTo(-8, top - 1); c.quadraticCurveTo(0, top - 8, 9, top - 3); c.stroke();
+      c.lineWidth = 2;
+      c.strokeStyle = '#000';
+    } else if (hat === 'Cone') {
+      c.fillStyle = '#ff7a1a';
+      c.beginPath();
+      c.moveTo(-9, top);
+      c.lineTo(9, top);
+      c.lineTo(2, top - 18);
+      c.lineTo(-2, top - 18);
+      c.closePath();
+      c.fill(); c.stroke();
+      c.fillStyle = '#fff';
+      c.fillRect(-7, top - 5, 14, 2);
+      c.fillRect(-5, top - 11, 10, 2);
+      c.fillStyle = '#ff7a1a';
+      c.fillRect(-10, top - 1, 20, 3);
+      c.strokeRect(-10, top - 1, 20, 3);
+    } else if (hat === 'Egg') {
+      c.fillStyle = '#fff5dc';
+      c.beginPath(); c.ellipse(0, top - 6, 10, 12, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.fillStyle = '#d4b87a';
+      [[-4, -10], [3, -4], [-2, -2], [5, -12], [-6, -6]].forEach(([sx, sy]) => {
+        c.beginPath(); c.arc(sx, top + sy, 1.2, 0, Math.PI * 2); c.fill();
+      });
+    } else if (hat === 'Plant') {
+      // pot
+      c.fillStyle = '#a05a3a';
+      c.beginPath();
+      c.moveTo(-7, top); c.lineTo(7, top); c.lineTo(6, top - 6); c.lineTo(-6, top - 6);
+      c.closePath();
+      c.fill(); c.stroke();
+      c.fillRect(-8, top - 8, 16, 3);
+      c.strokeRect(-8, top - 8, 16, 3);
+      // leaves
+      c.fillStyle = '#3aa84a';
+      c.beginPath(); c.ellipse(-4, top - 12, 3, 6, -0.5, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.beginPath(); c.ellipse(4, top - 12, 3, 6, 0.5, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.beginPath(); c.ellipse(0, top - 16, 3, 6, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+    } else if (hat === 'Devil') {
+      c.fillStyle = '#c8232c';
+      // left horn
+      c.beginPath();
+      c.moveTo(-8, top); c.lineTo(-3, top - 1); c.lineTo(-6, top - 10);
+      c.closePath(); c.fill(); c.stroke();
+      // right horn
+      c.beginPath();
+      c.moveTo(8, top); c.lineTo(3, top - 1); c.lineTo(6, top - 10);
+      c.closePath(); c.fill(); c.stroke();
+    } else if (hat === 'Antenna') {
+      c.strokeStyle = '#222'; c.lineWidth = 1.5;
+      c.beginPath(); c.moveTo(-3, top); c.lineTo(-5, top - 12); c.stroke();
+      c.beginPath(); c.moveTo(3, top); c.lineTo(5, top - 12); c.stroke();
+      c.lineWidth = 2; c.strokeStyle = '#000';
+      c.fillStyle = '#ff4fa3';
+      c.beginPath(); c.arc(-5, top - 13, 2, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.fillStyle = '#5ec8ff';
+      c.beginPath(); c.arc(5, top - 13, 2, 0, Math.PI * 2); c.fill(); c.stroke();
+    } else if (hat === 'Bow') {
+      c.fillStyle = '#ff4fa3';
+      // left loop
+      c.beginPath();
+      c.moveTo(0, top - 4); c.lineTo(-9, top - 9); c.lineTo(-9, top + 1); c.closePath();
+      c.fill(); c.stroke();
+      // right loop
+      c.beginPath();
+      c.moveTo(0, top - 4); c.lineTo(9, top - 9); c.lineTo(9, top + 1); c.closePath();
+      c.fill(); c.stroke();
+      // knot
+      c.fillStyle = '#ff7ab8';
+      c.fillRect(-2, top - 7, 4, 6);
+      c.strokeRect(-2, top - 7, 4, 6);
+    } else if (hat === 'Tin Foil') {
+      c.fillStyle = '#bfc4cc';
+      c.beginPath();
+      c.moveTo(-11, top + 1);
+      c.lineTo(-9, top - 4);
+      c.lineTo(-5, top - 7);
+      c.lineTo(0, top - 9);
+      c.lineTo(5, top - 7);
+      c.lineTo(9, top - 4);
+      c.lineTo(11, top + 1);
+      c.lineTo(8, top - 14);
+      c.lineTo(-8, top - 14);
+      c.closePath();
+      c.fill(); c.stroke();
+      // creases
+      c.strokeStyle = '#7a8088'; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(-4, top - 13); c.lineTo(-2, top - 4); c.stroke();
+      c.beginPath(); c.moveTo(3, top - 13); c.lineTo(5, top - 4); c.stroke();
+      c.lineWidth = 2; c.strokeStyle = '#000';
     } else if (hat === 'Mustache') {
-      // not a hat exactly — funny moustache under beak
-      ctx.fillStyle = '#3b2a1a';
-      ctx.beginPath();
-      ctx.moveTo(8, 4);
-      ctx.quadraticCurveTo(12, 2, 16, 5);
-      ctx.quadraticCurveTo(13, 7, 10, 7);
-      ctx.quadraticCurveTo(7, 8, 4, 7);
-      ctx.quadraticCurveTo(1, 8, -2, 7);
-      ctx.quadraticCurveTo(-6, 7, -9, 5);
-      ctx.quadraticCurveTo(-5, 2, -1, 4);
-      ctx.quadraticCurveTo(3, 5, 8, 4);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
+      c.fillStyle = '#3b2a1a';
+      c.beginPath();
+      c.moveTo(8, 4);
+      c.quadraticCurveTo(12, 2, 16, 5);
+      c.quadraticCurveTo(13, 7, 10, 7);
+      c.quadraticCurveTo(7, 8, 4, 7);
+      c.quadraticCurveTo(1, 8, -2, 7);
+      c.quadraticCurveTo(-6, 7, -9, 5);
+      c.quadraticCurveTo(-5, 2, -1, 4);
+      c.quadraticCurveTo(3, 5, 8, 4);
+      c.closePath();
+      c.fill(); c.stroke();
     }
   }
 
-  function drawEye(x, y, r, pupilR) {
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#000';
-    ctx.beginPath(); ctx.arc(x + 2, y, pupilR, 0, Math.PI * 2); ctx.fill();
+  function drawEyeOn(c, x, y, r, pupilR) {
+    c.fillStyle = '#fff';
+    c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.fillStyle = '#000';
+    c.beginPath(); c.arc(x + 2, y, pupilR, 0, Math.PI * 2); c.fill();
   }
-  function drawBeak(color, len) {
+  function drawBeakOn(c, color, len) {
     len = len || 20;
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(10, -1);
-    ctx.lineTo(len, 0);
-    ctx.lineTo(10, 5);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
+    c.fillStyle = color;
+    c.beginPath();
+    c.moveTo(10, -1);
+    c.lineTo(len, 0);
+    c.lineTo(10, 5);
+    c.closePath();
+    c.fill(); c.stroke();
   }
 
   function drawScore() {
