@@ -304,7 +304,7 @@
   const STATE_PLAY = 1;
   const STATE_OVER = 2;
 
-  let state, bird, pipes, frame, score, best, groundOffset, overTimer;
+  let state, bird, pipes, frame, score, best, groundOffset, overTimer, runStartedAt, runDuration;
   best = parseInt(localStorage.getItem('flappy_best') || '0', 10);
 
   // ===== Leaderboard =====
@@ -353,12 +353,13 @@
   async function submitScore(score) {
     const name = (nameInput.value || '').trim().slice(0, 16) || 'Anon';
     const skinPayload = { color: skin.color, style: skin.style, hat: skin.hat };
+    const duration = runDuration || 0;
     if (lb.online) {
       try {
         const res = await fetch(API_BASE + '/api/scores', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, score, skin: skinPayload }),
+          body: JSON.stringify({ name, score, skin: skinPayload, duration }),
         });
         if (!res.ok) throw new Error('http ' + res.status);
         const data = await res.json();
@@ -712,7 +713,10 @@
   function flap() {
     ensureAudio();
     if (audio.ctx && audio.ctx.state === 'suspended') audio.ctx.resume();
-    if (state === STATE_READY) state = STATE_PLAY;
+    if (state === STATE_READY) {
+      state = STATE_PLAY;
+      runStartedAt = Date.now();
+    }
     if (state === STATE_PLAY) {
       bird.v = FLAP;
       bird.flapTimer = 8;
@@ -745,6 +749,7 @@
     if (state !== STATE_PLAY) return;
     state = STATE_OVER;
     overTimer = 0;
+    runDuration = runStartedAt ? Date.now() - runStartedAt : 0;
     sfxHit();
     if (score > best) {
       best = score;
