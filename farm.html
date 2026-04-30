@@ -25,7 +25,7 @@
   #app {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 16px;
+    padding: 64px 16px 16px;
   }
   header {
     display: flex;
@@ -39,16 +39,51 @@
     letter-spacing: 1px;
   }
   h1 .leaf { color: var(--accent); }
-  .nav a {
+  #navbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 48px;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    z-index: 100;
+    gap: 14px;
+  }
+  #navbar .brand {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+  #navbar .links {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+  }
+  #navbar a {
+    color: #fff;
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    background: rgba(255,255,255,0.06);
+    transition: background 0.15s;
+  }
+  #navbar a:hover { background: rgba(255,255,255,0.16); }
+  #navbar a.active { background: rgba(255,255,255,0.24); font-weight: 600; }
+  .reset-link {
     color: var(--text);
     text-decoration: none;
     padding: 6px 12px;
     border-radius: 6px;
     background: rgba(255,255,255,0.06);
-    margin-left: 6px;
     font-size: 13px;
+    cursor: pointer;
   }
-  .nav a:hover { background: rgba(255,255,255,0.14); }
+  .reset-link:hover { background: rgba(255,255,255,0.14); }
   #stats {
     display: flex;
     gap: 12px;
@@ -260,13 +295,17 @@
 </style>
 </head>
 <body>
+<nav id="navbar">
+  <div class="brand">🎮 Game Hub</div>
+  <div class="links">
+    <a href="index.html">🐦 Flappy Bird</a>
+    <a href="farm.html" class="active">🌿 Bud Tycoon</a>
+  </div>
+</nav>
 <div id="app">
   <header>
     <h1><span class="leaf">🌿</span> Bud Tycoon</h1>
-    <div class="nav">
-      <a href="index.html">Flappy Bird</a>
-      <a href="#" id="resetBtn">Reset</a>
-    </div>
+    <a class="reset-link" href="#" id="resetBtn">Reset Progress</a>
   </header>
 
   <div id="stats">

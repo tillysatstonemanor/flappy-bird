@@ -21,7 +21,43 @@
     height: 100vh;
     flex-direction: column;
     gap: 10px;
+    padding-top: 56px;
   }
+  #navbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 48px;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    z-index: 100;
+    gap: 14px;
+  }
+  #navbar .brand {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+  #navbar .links {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+  }
+  #navbar a {
+    color: #fff;
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    background: rgba(255,255,255,0.06);
+    transition: background 0.15s;
+  }
+  #navbar a:hover { background: rgba(255,255,255,0.16); }
+  #navbar a.active { background: rgba(255,255,255,0.24); font-weight: 600; }
   #wrap {
     display: flex;
     gap: 16px;
@@ -234,6 +270,13 @@
 </style>
 </head>
 <body>
+<nav id="navbar">
+  <div class="brand">🎮 Game Hub</div>
+  <div class="links">
+    <a href="index.html" class="active">🐦 Flappy Bird</a>
+    <a href="farm.html">🌿 Bud Tycoon</a>
+  </div>
+</nav>
 <div id="wrap">
   <div id="leaderboard">
     <h2>Leaderboard</h2>
@@ -280,7 +323,7 @@
     </details>
   </div>
 </div>
-<div id="hint">SPACE / ↑ / CLICK to flap &nbsp;·&nbsp; R to restart &nbsp;·&nbsp; <a href="farm.html" style="color:#9be24c;text-decoration:none;">🌿 Bud Tycoon</a></div>
+<div id="hint">SPACE / ↑ / CLICK to flap &nbsp;·&nbsp; R to restart</div>
 <script>
 (() => {
   const canvas = document.getElementById('game');
