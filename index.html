@@ -37,16 +37,75 @@
   #panel {
     background: rgba(0,0,0,0.35);
     backdrop-filter: blur(6px);
-    padding: 16px 18px;
+    padding: 14px 16px;
     border-radius: 12px;
-    width: 220px;
+    width: 240px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    max-height: 600px;
+    overflow-y: auto;
   }
   #panel h2 {
     margin: 0 0 10px 0;
     font-size: 18px;
     letter-spacing: 1px;
+    text-align: center;
   }
+  #preview {
+    display: block;
+    margin: 0 auto 12px;
+    background: linear-gradient(180deg, #70c5ce, #bce8f0);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  details.section {
+    margin: 6px 0;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  details.section[open] { background: rgba(255,255,255,0.08); }
+  details.section > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  details.section > summary::-webkit-details-marker { display: none; }
+  details.section > summary::after {
+    content: '▾';
+    transition: transform 0.2s;
+    opacity: 0.6;
+  }
+  details.section[open] > summary::after { transform: rotate(180deg); }
+  .section-body {
+    padding: 4px 12px 12px;
+  }
+  .hat-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .hat-tab {
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .hat-tab.active {
+    background: rgba(255,255,255,0.3);
+    border-color: #fff;
+  }
+  .hat-tab:hover { background: rgba(255,255,255,0.18); }
   .row {
     display: flex;
     align-items: center;
@@ -185,24 +244,40 @@
   </div>
   <canvas id="game" width="400" height="600"></canvas>
   <div id="panel">
-    <h2>Customize Bird</h2>
-    <div class="row"><label>Body Color</label><input type="color" id="bodyColor" value="#f7d51d"></div>
-    <div>
-      <label style="font-size:13px;opacity:0.85;">Presets</label>
-      <div class="swatches" id="swatches"></div>
-    </div>
-    <div style="margin-top:14px;">
-      <label style="font-size:13px;opacity:0.85;">Style</label>
-      <div class="styles" id="styles"></div>
-    </div>
-    <div style="margin-top:14px;">
-      <label style="font-size:13px;opacity:0.85;">Hat</label>
-      <div class="styles" id="hats"></div>
-    </div>
-    <h2 style="margin-top:16px;">Audio</h2>
-    <div class="row"><label>Music</label><div class="toggle on" id="musicToggle"></div></div>
-    <div class="row"><label>Sound FX</label><div class="toggle on" id="sfxToggle"></div></div>
-    <div class="row"><label>Volume</label><input type="range" id="volume" min="0" max="100" value="50"></div>
+    <h2>Your Bird</h2>
+    <canvas id="preview" width="160" height="110"></canvas>
+
+    <details class="section" open>
+      <summary>Color</summary>
+      <div class="section-body">
+        <div class="row" style="margin-top:0;"><label>Custom</label><input type="color" id="bodyColor" value="#f7d51d"></div>
+        <div class="swatches" id="swatches"></div>
+      </div>
+    </details>
+
+    <details class="section" open>
+      <summary>Style</summary>
+      <div class="section-body">
+        <div class="styles" id="styles"></div>
+      </div>
+    </details>
+
+    <details class="section">
+      <summary>Hat</summary>
+      <div class="section-body">
+        <div class="hat-tabs" id="hatTabs"></div>
+        <div class="styles" id="hats"></div>
+      </div>
+    </details>
+
+    <details class="section">
+      <summary>Audio</summary>
+      <div class="section-body">
+        <div class="row"><label>Music</label><div class="toggle on" id="musicToggle"></div></div>
+        <div class="row"><label>Sound FX</label><div class="toggle on" id="sfxToggle"></div></div>
+        <div class="row"><label>Volume</label><input type="range" id="volume" min="0" max="100" value="50"></div>
+      </div>
+    </details>
   </div>
 </div>
 <div id="hint">SPACE / ↑ / CLICK to flap &nbsp;·&nbsp; R to restart</div>
@@ -355,18 +430,41 @@
   // ===== Customization =====
   const PRESETS = ['#f7d51d','#ff6b6b','#5ec8ff','#7cf26b','#c77dff','#ff9b29','#ffffff','#222222','#ff4fa3','#39e6c8'];
   const STYLES = ['Classic','Round','Sleek','Angry'];
-  const HATS = [
-    'None','Crown','Royal Crown','Top Hat','Fedora','Party','Wizard','Cap','Beanie',
-    'Halo','Propeller','Cowboy','Pirate','Knight','Flower','Banana','Leaf','Cone',
-    'Egg','Plant','Devil','Antenna','Bow','Tin Foil','Mustache'
-  ];
+  const HAT_CATEGORIES = {
+    'All': null,
+    'Royalty': ['Crown','Royal Crown','Top Hat','Fedora'],
+    'Fun': ['Party','Wizard','Cap','Beanie','Halo','Propeller','Bow'],
+    'Adventure': ['Cowboy','Pirate','Knight'],
+    'Goofy': ['Flower','Banana','Leaf','Cone','Egg','Plant','Devil','Antenna','Tin Foil'],
+    'Face': ['Mustache'],
+  };
+  const HATS = ['None', ...Object.values(HAT_CATEGORIES).filter(Boolean).flat()];
   const saved = JSON.parse(localStorage.getItem('flappy_skin') || '{}');
   const skin = {
     color: saved.color || '#f7d51d',
     style: saved.style || 'Classic',
     hat: saved.hat || 'None'
   };
-  function saveSkin() { localStorage.setItem('flappy_skin', JSON.stringify(skin)); }
+  function saveSkin() {
+    localStorage.setItem('flappy_skin', JSON.stringify(skin));
+    renderPreview();
+  }
+
+  // Live preview canvas
+  const previewCanvas = document.getElementById('preview');
+  const previewCtx = previewCanvas.getContext('2d');
+  let previewFrame = 0;
+  function renderPreview() {
+    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+    drawBirdAt(
+      previewCtx,
+      previewCanvas.width / 2,
+      previewCanvas.height / 2 + 6 + Math.sin(previewFrame / 20) * 3,
+      skin,
+      { rot: 0, flapTimer: (previewFrame % 60) < 10 ? 8 : 0, frame: previewFrame }
+    );
+  }
+  setInterval(() => { previewFrame++; renderPreview(); }, 50);
 
   // Swatches UI
   const swatchEl = document.getElementById('swatches');
@@ -405,19 +503,41 @@
     stylesEl.appendChild(b);
   });
 
-  // Hats UI
+  // Hats UI with category tabs
   const hatsEl = document.getElementById('hats');
-  HATS.forEach(h => {
-    const b = document.createElement('button');
-    b.className = 'style-btn' + (h === skin.hat ? ' active' : '');
-    b.textContent = h;
-    b.addEventListener('click', () => {
-      skin.hat = h;
-      [...hatsEl.children].forEach(x => x.classList.toggle('active', x.textContent === h));
-      saveSkin();
+  const hatTabsEl = document.getElementById('hatTabs');
+  let activeHatCategory = 'All';
+
+  function renderHatButtons() {
+    hatsEl.innerHTML = '';
+    const filter = HAT_CATEGORIES[activeHatCategory];
+    const list = filter ? ['None', ...filter] : HATS;
+    list.forEach(h => {
+      const b = document.createElement('button');
+      b.className = 'style-btn' + (h === skin.hat ? ' active' : '');
+      b.textContent = h;
+      b.addEventListener('click', () => {
+        skin.hat = h;
+        [...hatsEl.children].forEach(x => x.classList.toggle('active', x.textContent === h));
+        saveSkin();
+      });
+      hatsEl.appendChild(b);
     });
-    hatsEl.appendChild(b);
+  }
+
+  Object.keys(HAT_CATEGORIES).forEach(cat => {
+    const t = document.createElement('button');
+    t.className = 'hat-tab' + (cat === activeHatCategory ? ' active' : '');
+    t.textContent = cat;
+    t.addEventListener('click', () => {
+      activeHatCategory = cat;
+      [...hatTabsEl.children].forEach(x => x.classList.toggle('active', x.textContent === cat));
+      renderHatButtons();
+    });
+    hatTabsEl.appendChild(t);
   });
+  renderHatButtons();
+  renderPreview();
 
   // ===== Audio =====
   const audio = {
