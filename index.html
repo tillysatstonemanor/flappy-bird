@@ -351,12 +351,24 @@
   }
 
   // Pre-fetch a session token so it's ready before the player finishes.
-  function ensureToken() {
+  // Tokens are reusable across all games in this browser session.
+  let tokenFetchInFlight = null;
+  function ensureToken(retries) {
+    if (retries == null) retries = 2;
     if (runToken) return Promise.resolve(runToken);
-    return fetch(API_BASE + '/api/session', { method: 'POST' })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d && d.token) runToken = d.token; return runToken; })
-      .catch(() => null);
+    if (tokenFetchInFlight) return tokenFetchInFlight;
+    tokenFetchInFlight = fetch(API_BASE + '/api/session', { method: 'POST' })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
+      .then(function (d) { if (d && d.token) runToken = d.token; return runToken; })
+      .catch(function () {
+        if (retries > 0) {
+          return new Promise(function (res) { setTimeout(res, 800); })
+            .then(function () { tokenFetchInFlight = null; return ensureToken(retries - 1); });
+        }
+        return null;
+      })
+      .finally(function () { tokenFetchInFlight = null; });
+    return tokenFetchInFlight;
   }
   ensureToken();
 
@@ -373,14 +385,20 @@
           body: JSON.stringify({ name, score, skin: skinPayload, token: runToken }),
         });
         const data = await res.json().catch(() => ({}));
-        // Token is always consumed; the next game's first flap will fetch a new one.
-        runToken = null;
         if (!res.ok) {
           const reason = data.error || ('http ' + res.status);
+          // If the session is bad, drop it so we fetch a new one for the next game.
+          if (reason === 'invalid or missing session' ||
+              reason === 'session expired' ||
+              reason === 'session exhausted' ||
+              reason === 'session ip mismatch') {
+            runToken = null;
+            ensureToken();
+          }
           if (res.status === 400 && reason === 'too fast') {
             lbStatusEl.textContent = 'rejected: too fast (anti-cheat)';
           } else if (reason.includes('session')) {
-            lbStatusEl.textContent = 'rejected: ' + reason + ' — try again';
+            lbStatusEl.textContent = 'rejected: ' + reason + ' — please retry';
           } else {
             lbStatusEl.textContent = 'rejected: ' + reason;
           }

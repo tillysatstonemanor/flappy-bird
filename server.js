@@ -16,10 +16,10 @@ const MAX_ENTRIES = 100;
 const MAX_SCORE = 500;
 const MS_PER_SCORE = 800;        // generous grace below pipe rate (~1.58s)
 const MS_OVERHEAD = 0;           // no fixed overhead — page-load buffer covers it
-const NO_TOKEN_MAX = 8;          // small scores skip the token check entirely
-const MS_SESSION_TTL = 30 * 60_000;
+const NO_TOKEN_MAX = 15;         // small scores skip the token check entirely
+const MS_SESSION_TTL = 60 * 60_000;
 const RATE_WINDOW_MS = 60_000;
-const RATE_MAX = 30;             // any endpoint, per IP per min
+const RATE_MAX = 120;            // generous; per IP per min
 
 // Names that have been caught cheating. They will be silently rejected and
 // any historical entries scrubbed at startup.
@@ -83,9 +83,10 @@ function rateLimited(ip) {
   return arr.length > RATE_MAX;
 }
 
-// Server-issued session tokens. Client must request one before submitting,
-// and the server measures real elapsed time itself — clients can't fake it.
-const sessions = new Map(); // token -> { createdAt, ip, used }
+// Server-issued session tokens. Client requests one (typically once per page
+// load) and reuses it for as many games as they play within the TTL. The
+// server measures real elapsed time from token creation — clients can't fake it.
+const sessions = new Map(); // token -> { createdAt, ip, uses }
 
 function gcSessions() {
   const now = Date.now();
@@ -132,7 +133,7 @@ app.post('/api/session', (req, res) => {
   if (rateLimited(ip)) return res.status(429).json({ error: 'too many requests' });
   gcSessions();
   const token = crypto.randomBytes(16).toString('hex');
-  sessions.set(token, { createdAt: Date.now(), ip, used: false });
+  sessions.set(token, { createdAt: Date.now(), ip, uses: 0 });
   res.json({ token });
 });
 
@@ -160,7 +161,6 @@ app.post('/api/scores', (req, res) => {
       return res.status(400).json({ error: 'invalid or missing session' });
     }
     const sess = sessions.get(token);
-    if (sess.used) return res.status(400).json({ error: 'session already used' });
     if (sess.ip !== ip) return res.status(403).json({ error: 'session ip mismatch' });
     const realDuration = Date.now() - sess.createdAt;
     const minMs = MS_OVERHEAD + score * MS_PER_SCORE;
@@ -172,11 +172,15 @@ app.post('/api/scores', (req, res) => {
       });
     }
     if (realDuration > MS_SESSION_TTL) {
+      sessions.delete(token);
       return res.status(400).json({ error: 'session expired' });
     }
-    sess.used = true;
-    // Consume the session so it can't be reused.
-    sessions.delete(token);
+    sess.uses++;
+    // Hard cap so a single token can't be abused indefinitely.
+    if (sess.uses > 200) {
+      sessions.delete(token);
+      return res.status(400).json({ error: 'session exhausted' });
+    }
   }
 
   const sk = sanitizeSkin(skin);
