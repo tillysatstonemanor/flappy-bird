@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Bud Tycoon</title>
+<style>
+  :root {
+    --bg: #1a2418;
+    --panel: rgba(0,0,0,0.4);
+    --accent: #6fce5f;
+    --accent-dim: #4a8a3a;
+    --gold: #ffd84d;
+    --text: #e9efe2;
+    --danger: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: linear-gradient(135deg, #0f1810 0%, #1f3a1a 100%);
+    color: var(--text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    user-select: none;
+  }
+  #app {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 26px;
+    letter-spacing: 1px;
+  }
+  h1 .leaf { color: var(--accent); }
+  .nav a {
+    color: var(--text);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    margin-left: 6px;
+    font-size: 13px;
+  }
+  .nav a:hover { background: rgba(255,255,255,0.14); }
+  #stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    flex: 1;
+    min-width: 120px;
+  }
+  .stat .label { font-size: 11px; opacity: 0.7; letter-spacing: 1px; text-transform: uppercase; }
+  .stat .val { font-size: 22px; font-weight: 600; margin-top: 2px; }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .tab {
+    padding: 10px 18px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 8px 8px 0 0;
+    opacity: 0.6;
+  }
+  .tab.active {
+    background: var(--panel);
+    opacity: 1;
+    border-bottom: 2px solid var(--accent);
+  }
+  .panel {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 18px;
+    min-height: 380px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .pot {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .pot:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+  .pot .plant {
+    font-size: 56px;
+    line-height: 1;
+    margin: 8px 0;
+    transition: transform 0.2s;
+  }
+  .pot:hover .plant { transform: scale(1.1); }
+  .pot .progress {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .pot .progress > div {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+  .pot .stage { font-size: 11px; opacity: 0.8; margin-top: 4px; }
+  .pot.empty .plant { opacity: 0.2; }
+  .pot.ready { box-shadow: 0 0 20px rgba(111,206,95,0.4); border-color: var(--accent); }
+  .btn {
+    background: var(--accent-dim);
+    color: #fff;
+    border: 1px solid var(--accent);
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: var(--accent); }
+  .btn:disabled {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.4);
+    border-color: rgba(255,255,255,0.1);
+    cursor: not-allowed;
+  }
+  .btn.secondary { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+  .btn.gold { background: #b8932e; border-color: var(--gold); }
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .product-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    gap: 10px;
+  }
+  .product-row .info { flex: 1; }
+  .product-row .name { font-weight: 600; }
+  .product-row .meta { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 999px;
+    font-size: 11px;
+    margin-right: 4px;
+  }
+  #shopArea {
+    position: relative;
+    min-height: 280px;
+    background: linear-gradient(180deg, #2a3a25 0%, #4a5a3a 70%, #5a4a2a 100%);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  #counter {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(180deg, #6a4a2a, #4a3018);
+    border-top: 3px solid #8a5a3a;
+  }
+  .customer {
+    position: absolute;
+    bottom: 60px;
+    transition: left 0.2s linear;
+    cursor: pointer;
+  }
+  .customer .body {
+    font-size: 60px;
+    line-height: 1;
+    text-align: center;
+  }
+  .customer .bubble {
+    background: #fff;
+    color: #222;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    text-align: center;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    margin-bottom: 4px;
+    position: relative;
+  }
+  .customer .bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #fff;
+  }
+  .customer.served .bubble { background: var(--accent); color: #fff; }
+  .customer.angry .bubble { background: var(--danger); color: #fff; }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-left: 4px solid var(--accent);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    animation: slideIn 0.2s, fadeOut 0.3s 2.5s forwards;
+    z-index: 100;
+    max-width: 300px;
+  }
+  .toast.bad { border-left-color: var(--danger); }
+  .toast.gold { border-left-color: var(--gold); }
+  @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes fadeOut { to { opacity: 0; transform: translateX(40px); } }
+  .upgrade-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .upgrade-card .title { font-weight: 600; }
+  .upgrade-card .desc { font-size: 12px; opacity: 0.75; margin: 4px 0 10px; }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; padding: 8px 0; font-weight: 600; }
+  .muted { opacity: 0.6; font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1><span class="leaf">🌿</span> Bud Tycoon</h1>
+    <div class="nav">
+      <a href="index.html">Flappy Bird</a>
+      <a href="#" id="resetBtn">Reset</a>
+    </div>
+  </header>
+
+  <div id="stats">
+    <div class="stat"><div class="label">Cash</div><div class="val" id="cashVal">$0</div></div>
+    <div class="stat"><div class="label">Buds (g)</div><div class="val" id="budVal">0</div></div>
+    <div class="stat"><div class="label">Inventory</div><div class="val" id="invVal">0</div></div>
+    <div class="stat"><div class="label">Reputation</div><div class="val" id="repVal">0</div></div>
+    <div class="stat"><div class="label">Day</div><div class="val" id="dayVal">1</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="grow">🌱 Grow</button>
+    <button class="tab" data-tab="pack">📦 Package</button>
+    <button class="tab" data-tab="shop">🛒 Shop</button>
+    <button class="tab" data-tab="upgrades">⚡ Upgrades</button>
+  </div>
+
+  <div class="panel" id="panel"></div>
+</div>
+
+<script>
+(() => {
+  // ===== Game state =====
+  const SAVE_KEY = 'bud_tycoon_v1';
+
+  const STAGES = [
+    { name: 'Empty', emoji: '🪴', dur: 0 },
+    { name: 'Seedling', emoji: '🌱', dur: 15_000 },
+    { name: 'Vegetative', emoji: '🌿', dur: 30_000 },
+    { name: 'Flowering', emoji: '🌾', dur: 45_000 },
+    { name: 'Ready', emoji: '🥦', dur: Infinity },
+  ];
+
+  // Products: grams required → price
+  const PRODUCTS = [
+    { id: 'joint',   name: 'Joint',     g: 1,  price: 12,  emoji: '🚬' },
+    { id: 'gram',    name: 'Gram',      g: 1,  price: 15,  emoji: '🌿' },
+    { id: 'eighth',  name: 'Eighth',    g: 3.5, price: 50, emoji: '📦' },
+    { id: 'quarter', name: 'Quarter',   g: 7,  price: 95,  emoji: '📦' },
+    { id: 'half',    name: 'Half-O',    g: 14, price: 180, emoji: '📦' },
+    { id: 'ounce',   name: 'Ounce',     g: 28, price: 340, emoji: '📦' },
+  ];
+
+  const UPGRADES = [
+    { id: 'pot',         name: 'Buy Pot',         desc: 'Add another grow pot.',                 cost: 80,  apply: s => s.pots.push(makePot()), max: 16 },
+    { id: 'lights',      name: 'Better Lights',   desc: 'Plants grow 25% faster.',                cost: 250, apply: s => { s.growthMult *= 1.25; }, max: 5 },
+    { id: 'seeds',       name: 'Premium Genetics',desc: '+1g harvest yield per plant.',           cost: 200, apply: s => { s.yieldBonus += 1; }, max: 10 },
+    { id: 'marketing',   name: 'Marketing',       desc: 'Customers arrive 25% more often.',       cost: 350, apply: s => { s.customerRateMult *= 1.25; }, max: 6 },
+    { id: 'wallet',      name: 'Bigger Wallets',  desc: 'Customers willing to pay 15% more.',     cost: 400, apply: s => { s.priceMult *= 1.15; }, max: 6 },
+    { id: 'patience',    name: 'Comfy Lounge',    desc: 'Customers wait 25% longer.',             cost: 300, apply: s => { s.patienceMult *= 1.25; }, max: 5 },
+    { id: 'autowater',   name: 'Auto-Water',      desc: 'Plants don\'t need watering.',           cost: 600, apply: s => { s.autoWater = true; }, max: 1 },
+  ];
+
+  function makePot() {
+    return { stage: 0, plantedAt: 0, watered: true, lastWater: 0 };
+  }
+
+  function defaultState() {
+    return {
+      cash: 100,
+      buds: 0,                // grams of harvested bud
+      inv: {},                // product id -> qty
+      rep: 0,
+      day: 1,
+      pots: [makePot(), makePot(), makePot(), makePot()],
+      growthMult: 1,
+      yieldBonus: 0,
+      customerRateMult: 1,
+      priceMult: 1,
+      patienceMult: 1,
+      autoWater: false,
+      upgradeLevels: {},
+      lastTick: Date.now(),
+      seedCost: 10,
+      customers: [], // active in shop
+    };
+  }
+
+  let state;
+  function load() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return defaultState();
+      const s = JSON.parse(raw);
+      // ensure new fields
+      const d = defaultState();
+      return Object.assign(d, s, { customers: [] });
+    } catch { return defaultState(); }
+  }
+  function save() {
+    const toSave = { ...state, customers: [] };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(toSave));
+  }
+  state = load();
+
+  // ===== Notifications =====
+  function toast(msg, kind) {
+    const el = document.createElement('div');
+    el.className = 'toast' + (kind ? ' ' + kind : '');
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  // ===== UI =====
+  const panel = document.getElementById('panel');
+  let activeTab = 'grow';
+
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      activeTab = t.dataset.tab;
+      document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+      render();
+    });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (confirm('Reset all progress?')) {
+      localStorage.removeItem(SAVE_KEY);
+      state = defaultState();
+      render();
+    }
+  });
+
+  function fmt$(n) { return '$' + Math.floor(n).toLocaleString(); }
+
+  function updateStats() {
+    document.getElementById('cashVal').textContent = fmt$(state.cash);
+    document.getElementById('budVal').textContent = state.buds.toFixed(1);
+    const totalInv = Object.values(state.inv).reduce((a, b) => a + b, 0);
+    document.getElementById('invVal').textContent = totalInv;
+    document.getElementById('repVal').textContent = state.rep;
+    document.getElementById('dayVal').textContent = state.day;
+  }
+
+  function stageOf(pot) {
+    if (pot.stage === 0) return 0;
+    if (pot.stage === 4) return 4;
+    const elapsed = Date.now() - pot.plantedAt;
+    let cum = 0;
+    for (let i = 1; i <= 3; i++) {
+      cum += STAGES[i].dur / state.growthMult;
+      if (elapsed < cum) return i;
+    }
+    return 4;
+  }
+
+  function renderGrow() {
+    panel.innerHTML = `
+      <div class="toolbar">
+        <button class="btn" id="plantAll">Plant All Empty (${PRODUCTS_COST_TEXT()})</button>
+        ${state.autoWater ? '' : '<button class="btn secondary" id="waterAll">Water All</button>'}
+        <button class="btn secondary" id="harvestAll">Harvest Ready</button>
+        <span class="muted" style="align-self:center;margin-left:auto;">Click a pot to plant or harvest. Seeds cost ${fmt$(state.seedCost)}.</span>
+      </div>
+      <div class="grid" id="potsGrid"></div>
+    `;
+    const grid = document.getElementById('potsGrid');
+    state.pots.forEach((pot, i) => {
+      const stage = stageOf(pot);
+      const el = document.createElement('div');
+      el.className = 'pot' + (pot.stage === 0 ? ' empty' : '') + (stage === 4 ? ' ready' : '');
+      const stageInfo = STAGES[stage];
+      let progress = 0;
+      if (stage > 0 && stage < 4) {
+        const elapsed = Date.now() - pot.plantedAt;
+        let cum = 0;
+        for (let s = 1; s <= stage - 1; s++) cum += STAGES[s].dur / state.growthMult;
+        const stageDur = STAGES[stage].dur / state.growthMult;
+        progress = ((elapsed - cum) / stageDur) * 100;
+      } else if (stage === 4) progress = 100;
+      el.innerHTML = `
+        <div class="plant">${stageInfo.emoji}</div>
+        <div class="stage">${pot.stage === 0 ? 'Empty pot' : stageInfo.name}</div>
+        <div class="progress"><div style="width:${progress}%"></div></div>
+      `;
+      el.addEventListener('click', () => onPotClick(i));
+      grid.appendChild(el);
+    });
+    document.getElementById('plantAll').addEventListener('click', plantAll);
+    document.getElementById('harvestAll').addEventListener('click', harvestAll);
+    const wa = document.getElementById('waterAll');
+    if (wa) wa.addEventListener('click', () => toast('Auto-watered ✨'));
+  }
+
+  function PRODUCTS_COST_TEXT() {
+    const empty = state.pots.filter(p => p.stage === 0).length;
+    return `${empty} × ${fmt$(state.seedCost)}`;
+  }
+
+  function onPotClick(i) {
+    const pot = state.pots[i];
+    const stage = stageOf(pot);
+    if (pot.stage === 0) {
+      plant(i);
+    } else if (stage === 4) {
+      harvest(i);
+    } else {
+      toast('Still growing — be patient! 🌱');
+    }
+  }
+
+  function plant(i) {
+    if (state.cash < state.seedCost) return toast('Not enough cash for a seed.', 'bad');
+    state.cash -= state.seedCost;
+    state.pots[i] = { stage: 1, plantedAt: Date.now() };
+    save();
+    render();
+  }
+
+  function plantAll() {
+    let n = 0;
+    for (let i = 0; i < state.pots.length; i++) {
+      if (state.pots[i].stage === 0 && state.cash >= state.seedCost) {
+        state.cash -= state.seedCost;
+        state.pots[i] = { stage: 1, plantedAt: Date.now() };
+        n++;
+      }
+    }
+    if (n) toast(`Planted ${n} seed${n > 1 ? 's' : ''} 🌱`);
+    save(); render();
+  }
+
+  function harvest(i) {
+    const pot = state.pots[i];
+    if (stageOf(pot) !== 4) return;
+    const yieldG = (5 + Math.random() * 5) + state.yieldBonus;
+    state.buds += yieldG;
+    state.pots[i] = makePot();
+    pot.stage = 0;
+    toast(`Harvested ${yieldG.toFixed(1)}g 🥦`);
+    save(); render();
+  }
+
+  function harvestAll() {
+    let total = 0;
+    state.pots.forEach((pot, i) => {
+      if (stageOf(pot) === 4) {
+        total += (5 + Math.random() * 5) + state.yieldBonus;
+        state.pots[i] = makePot();
+      }
+    });
+    if (total > 0) {
+      state.buds += total;
+      toast(`Harvested ${total.toFixed(1)}g total 🥦`, 'gold');
+    } else {
+      toast('Nothing ready to harvest.');
+    }
+    save(); render();
+  }
+
+  // ===== Package =====
+  function renderPack() {
+    panel.innerHTML = `
+      <div class="muted" style="margin-bottom:12px;">
+        Convert raw buds into sellable products. You have <b>${state.buds.toFixed(1)}g</b> available.
+      </div>
+      <div id="prodList"></div>
+    `;
+    const list = document.getElementById('prodList');
+    PRODUCTS.forEach(p => {
+      const have = state.inv[p.id] || 0;
+      const canMake = Math.floor(state.buds / p.g);
+      const row = document.createElement('div');
+      row.className = 'product-row';
+      row.innerHTML = `
+        <div style="font-size:30px;">${p.emoji}</div>
+        <div class="info">
+          <div class="name">${p.name}</div>
+          <div class="meta">
+            <span class="pill">${p.g}g</span>
+            <span class="pill">${fmt$(p.price * state.priceMult)} sell</span>
+            <span class="pill">In stock: ${have}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn" data-pid="${p.id}" data-n="1" ${canMake < 1 ? 'disabled' : ''}>+1</button>
+          <button class="btn" data-pid="${p.id}" data-n="5" ${canMake < 5 ? 'disabled' : ''}>+5</button>
+          <button class="btn secondary" data-pid="${p.id}" data-n="max" ${canMake < 1 ? 'disabled' : ''}>Max (${canMake})</button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+    list.addEventListener('click', e => {
+      const b = e.target.closest('button[data-pid]');
+      if (!b) return;
+      const p = PRODUCTS.find(x => x.id === b.dataset.pid);
+      let n = b.dataset.n === 'max' ? Math.floor(state.buds / p.g) : parseInt(b.dataset.n, 10);
+      n = Math.min(n, Math.floor(state.buds / p.g));
+      if (n < 1) return;
+      state.buds -= n * p.g;
+      state.inv[p.id] = (state.inv[p.id] || 0) + n;
+      toast(`Packaged ${n} × ${p.name} 📦`);
+      save(); render();
+    });
+  }
+
+  // ===== Shop =====
+  let shopAreaWidth = 0;
+  let lastCustomerSpawn = 0;
+
+  function renderShop() {
+    panel.innerHTML = `
+      <div class="muted" style="margin-bottom:8px;">
+        Customers walk to the counter. Click them to sell what they want.
+      </div>
+      <div id="shopArea">
+        <div id="counter"></div>
+      </div>
+      <div id="invList"></div>
+    `;
+    const area = document.getElementById('shopArea');
+    shopAreaWidth = area.offsetWidth;
+    // re-render existing customers
+    state.customers.forEach(c => area.appendChild(c.el));
+    renderInvList();
+  }
+
+  function renderInvList() {
+    const list = document.getElementById('invList');
+    if (!list) return;
+    const items = PRODUCTS.filter(p => (state.inv[p.id] || 0) > 0);
+    list.innerHTML = items.length
+      ? '<div style="font-size:13px;opacity:0.7;margin:8px 0;">Your stock: '
+        + items.map(p => `${p.emoji} ${p.name} ×${state.inv[p.id]}`).join(' · ')
+        + '</div>'
+      : '<div class="muted" style="margin:8px 0;">No products in stock — head to Package.</div>';
+  }
+
+  function spawnCustomer() {
+    if (activeTab !== 'shop') return;
+    const area = document.getElementById('shopArea');
+    if (!area) return;
+    // pick a product the player has, or random if none
+    const stocked = PRODUCTS.filter(p => (state.inv[p.id] || 0) > 0);
+    const pool = stocked.length ? stocked : PRODUCTS;
+    const want = pool[Math.floor(Math.random() * pool.length)];
+    const emojis = ['🧑', '👩', '👨', '🧓', '👴', '👵', '🧔', '👱', '👨‍🦱', '👩‍🦰', '🧑‍🎤'];
+    const el = document.createElement('div');
+    el.className = 'customer';
+    el.innerHTML = `
+      <div class="bubble">Got a <b>${want.name}</b>?</div>
+      <div class="body">${emojis[Math.floor(Math.random() * emojis.length)]}</div>
+    `;
+    el.style.left = '-80px';
+    area.appendChild(el);
+    const c = {
+      el,
+      want,
+      x: -80,
+      targetX: 40 + Math.random() * (shopAreaWidth - 200),
+      arrived: false,
+      patience: (10000 + Math.random() * 5000) * state.patienceMult,
+      arrivedAt: 0,
+      done: false,
+    };
+    state.customers.push(c);
+    el.addEventListener('click', () => serveCustomer(c));
+  }
+
+  function serveCustomer(c) {
+    if (c.done) return;
+    const have = state.inv[c.want.id] || 0;
+    if (have < 1) {
+      toast(`No ${c.want.name} in stock!`, 'bad');
+      c.el.classList.add('angry');
+      c.el.querySelector('.bubble').innerHTML = `Out?! 😡`;
+      c.done = true;
+      state.rep = Math.max(0, state.rep - 1);
+      setTimeout(() => removeCustomer(c), 800);
+      save();
+      return;
+    }
+    state.inv[c.want.id] = have - 1;
+    const earned = c.want.price * state.priceMult;
+    state.cash += earned;
+    state.rep += 1;
+    c.el.classList.add('served');
+    c.el.querySelector('.bubble').innerHTML = `+${fmt$(earned)} 🙌`;
+    c.done = true;
+    toast(`Sold ${c.want.name} for ${fmt$(earned)} 💰`, 'gold');
+    setTimeout(() => removeCustomer(c), 700);
+    save();
+  }
+
+  function removeCustomer(c) {
+    c.el.remove();
+    state.customers = state.customers.filter(x => x !== c);
+  }
+
+  function tickCustomers() {
+    if (activeTab !== 'shop') return;
+    const now = Date.now();
+    for (const c of state.customers) {
+      if (!c.arrived) {
+        c.x += 3;
+        c.el.style.left = c.x + 'px';
+        if (c.x >= c.targetX) {
+          c.arrived = true;
+          c.arrivedAt = now;
+        }
+      } else if (!c.done) {
+        const remaining = c.patience - (now - c.arrivedAt);
+        if (remaining < 0) {
+          // left angry
+          c.el.classList.add('angry');
+          c.el.querySelector('.bubble').innerHTML = '😒';
+          c.done = true;
+          state.rep = Math.max(0, state.rep - 1);
+          setTimeout(() => removeCustomer(c), 600);
+        }
+      }
+    }
+  }
+
+  // ===== Upgrades =====
+  function renderUpgrades() {
+    panel.innerHTML = `
+      <div class="muted" style="margin-bottom:12px;">Spend cash to expand the operation.</div>
+      <div id="upList"></div>
+    `;
+    const list = document.getElementById('upList');
+    UPGRADES.forEach(u => {
+      const lvl = state.upgradeLevels[u.id] || 0;
+      const cost = Math.floor(u.cost * Math.pow(1.5, lvl));
+      const card = document.createElement('div');
+      card.className = 'upgrade-card';
+      const maxed = lvl >= u.max;
+      card.innerHTML = `
+        <div class="title">${u.name} ${u.max > 1 ? `<span class="pill">Lv ${lvl}/${u.max}</span>` : ''}</div>
+        <div class="desc">${u.desc}</div>
+        <button class="btn" ${maxed || state.cash < cost ? 'disabled' : ''} data-uid="${u.id}">
+          ${maxed ? 'Maxed' : `Buy — ${fmt$(cost)}`}
+        </button>
+      `;
+      list.appendChild(card);
+    });
+    list.addEventListener('click', e => {
+      const b = e.target.closest('button[data-uid]');
+      if (!b) return;
+      const u = UPGRADES.find(x => x.id === b.dataset.uid);
+      const lvl = state.upgradeLevels[u.id] || 0;
+      const cost = Math.floor(u.cost * Math.pow(1.5, lvl));
+      if (lvl >= u.max || state.cash < cost) return;
+      state.cash -= cost;
+      state.upgradeLevels[u.id] = lvl + 1;
+      u.apply(state);
+      toast(`Bought ${u.name}! 🎉`, 'gold');
+      save(); render();
+    });
+  }
+
+  function render() {
+    updateStats();
+    if (activeTab === 'grow') renderGrow();
+    else if (activeTab === 'pack') renderPack();
+    else if (activeTab === 'shop') renderShop();
+    else if (activeTab === 'upgrades') renderUpgrades();
+  }
+
+  // ===== Game loop =====
+  function tick() {
+    const now = Date.now();
+    // Grow tab progress refresh
+    if (activeTab === 'grow') {
+      // Update progress bars cheaply without full re-render every frame
+      const grid = document.getElementById('potsGrid');
+      if (grid) {
+        state.pots.forEach((pot, i) => {
+          const cell = grid.children[i];
+          if (!cell) return;
+          const stage = stageOf(pot);
+          const stageInfo = STAGES[stage];
+          let progress = 0;
+          if (stage > 0 && stage < 4) {
+            const elapsed = now - pot.plantedAt;
+            let cum = 0;
+            for (let s = 1; s <= stage - 1; s++) cum += STAGES[s].dur / state.growthMult;
+            const stageDur = STAGES[stage].dur / state.growthMult;
+            progress = ((elapsed - cum) / stageDur) * 100;
+          } else if (stage === 4) progress = 100;
+          const bar = cell.querySelector('.progress > div');
+          if (bar) bar.style.width = progress + '%';
+          const plantEl = cell.querySelector('.plant');
+          if (plantEl) plantEl.textContent = stageInfo.emoji;
+          const stEl = cell.querySelector('.stage');
+          if (stEl) stEl.textContent = pot.stage === 0 ? 'Empty pot' : stageInfo.name;
+          cell.classList.toggle('ready', stage === 4);
+          cell.classList.toggle('empty', pot.stage === 0);
+        });
+      }
+    }
+
+    // Customer spawn and tick
+    const spawnInterval = 6000 / state.customerRateMult;
+    if (now - lastCustomerSpawn > spawnInterval && state.customers.length < 5) {
+      lastCustomerSpawn = now;
+      spawnCustomer();
+    }
+    tickCustomers();
+
+    // Day counter — every 60s in-game
+    if (!state._dayStart) state._dayStart = now;
+    if (now - state._dayStart >= 60_000) {
+      state.day++;
+      state._dayStart = now;
+      updateStats();
+      save();
+    }
+
+    updateStats();
+  }
+
+  setInterval(tick, 100);
+  render();
+
+  // Save on visibility change so we don't lose much
+  document.addEventListener('visibilitychange', save);
+  window.addEventListener('beforeunload', save);
+})();
+</script>
+</body>
+</html>
