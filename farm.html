@@ -5,293 +5,459 @@
 <title>Bud Tycoon</title>
 <style>
   :root {
-    --bg: #1a2418;
-    --panel: rgba(0,0,0,0.4);
-    --accent: #6fce5f;
-    --accent-dim: #4a8a3a;
-    --gold: #ffd84d;
-    --text: #e9efe2;
-    --danger: #ff6b6b;
+    --wood-deep: #1c130a;
+    --wood-dark: #2a1c10;
+    --wood-mid: #3d2916;
+    --gold: #d4a574;
+    --gold-bright: #ffd896;
+    --gold-soft: rgba(212, 165, 116, 0.32);
+    --gold-line: rgba(212, 165, 116, 0.18);
+    --cream: #f5e9d3;
+    --cream-dim: rgba(245, 233, 211, 0.65);
+    --bad: #e57373;
+    --good: #8bc34a;
+    --info: #ffb74d;
   }
-  * { box-sizing: border-box; }
   html, body {
     margin: 0;
+    padding: 0;
     height: 100%;
-    background: linear-gradient(135deg, #0f1810 0%, #1f3a1a 100%);
-    color: var(--text);
-    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0c0805;
+    font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+    overflow: hidden;
     user-select: none;
+    color: var(--cream);
   }
-  #app {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 64px 16px 16px;
-  }
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-  }
-  h1 {
-    margin: 0;
-    font-size: 26px;
-    letter-spacing: 1px;
-  }
-  h1 .leaf { color: var(--accent); }
+
+  /* ---------- Navbar (kept but warm-themed) ---------- */
   #navbar {
     position: fixed;
     top: 0; left: 0; right: 0;
     height: 48px;
-    background: rgba(0,0,0,0.4);
-    backdrop-filter: blur(8px);
+    background: linear-gradient(180deg, rgba(28,19,10,0.96), rgba(20,14,8,0.94));
+    backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
-    padding: 0 18px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    padding: 0 22px;
+    border-bottom: 1px solid var(--gold-soft);
+    box-shadow: 0 2px 18px rgba(0,0,0,0.55);
     z-index: 100;
     gap: 14px;
   }
   #navbar .brand {
     font-size: 18px;
     font-weight: 700;
-    letter-spacing: 1px;
-    color: #fff;
+    letter-spacing: 2.5px;
+    color: var(--gold-bright);
+    text-shadow: 0 0 12px rgba(255, 210, 140, 0.25);
   }
-  #navbar .links {
-    display: flex;
-    gap: 4px;
-    margin-left: auto;
-  }
+  #navbar .links { display: flex; gap: 6px; margin-left: auto; }
   #navbar a {
-    color: #fff;
+    color: var(--cream);
     text-decoration: none;
-    padding: 6px 14px;
-    border-radius: 6px;
+    padding: 7px 16px;
+    border-radius: 8px;
     font-size: 13px;
-    background: rgba(255,255,255,0.06);
-    transition: background 0.15s;
+    background: rgba(212,165,116,0.06);
+    border: 1px solid transparent;
+    transition: all 0.15s;
   }
-  #navbar a:hover { background: rgba(255,255,255,0.16); }
-  #navbar a.active { background: rgba(255,255,255,0.24); font-weight: 600; }
-  .reset-link {
-    color: var(--text);
-    text-decoration: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    background: rgba(255,255,255,0.06);
-    font-size: 13px;
-    cursor: pointer;
+  #navbar a:hover {
+    background: rgba(212,165,116,0.16);
+    border-color: var(--gold-line);
   }
-  .reset-link:hover { background: rgba(255,255,255,0.14); }
-  #stats {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
+  #navbar a.active {
+    background: rgba(212,165,116,0.22);
+    border-color: var(--gold-soft);
+    color: var(--gold-bright);
+    font-weight: 600;
   }
-  .stat {
-    background: var(--panel);
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 14px;
-    flex: 1;
-    min-width: 120px;
+
+  #game {
+    position: fixed;
+    top: 48px; left: 0; right: 0; bottom: 0;
+    display: block;
+    cursor: crosshair;
   }
-  .stat .label { font-size: 11px; opacity: 0.7; letter-spacing: 1px; text-transform: uppercase; }
-  .stat .val { font-size: 22px; font-weight: 600; margin-top: 2px; }
-  .tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-  }
-  .tab {
-    padding: 10px 18px;
-    background: transparent;
-    border: none;
-    color: var(--text);
-    cursor: pointer;
-    font-size: 14px;
-    border-radius: 8px 8px 0 0;
-    opacity: 0.6;
-  }
-  .tab.active {
-    background: var(--panel);
-    opacity: 1;
-    border-bottom: 2px solid var(--accent);
-  }
+
+  /* ---------- Generic panel (wood + gold trim) ---------- */
   .panel {
-    background: var(--panel);
+    position: fixed;
+    background:
+      linear-gradient(180deg, rgba(45,30,18,0.94), rgba(28,19,10,0.96));
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--gold-soft);
     border-radius: 12px;
-    padding: 18px;
-    min-height: 380px;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 12px;
-  }
-  .pot {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 10px;
-    text-align: center;
-    cursor: pointer;
-    transition: transform 0.1s, background 0.15s;
-    position: relative;
-    overflow: hidden;
-  }
-  .pot:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
-  .pot .plant {
-    font-size: 56px;
-    line-height: 1;
-    margin: 8px 0;
-    transition: transform 0.2s;
-  }
-  .pot:hover .plant { transform: scale(1.1); }
-  .pot .progress {
-    height: 4px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-top: 6px;
-  }
-  .pot .progress > div {
-    height: 100%;
-    background: var(--accent);
-    transition: width 0.3s;
-  }
-  .pot .stage { font-size: 11px; opacity: 0.8; margin-top: 4px; }
-  .pot.empty .plant { opacity: 0.2; }
-  .pot.ready { box-shadow: 0 0 20px rgba(111,206,95,0.4); border-color: var(--accent); }
-  .btn {
-    background: var(--accent-dim);
-    color: #fff;
-    border: 1px solid var(--accent);
-    padding: 8px 14px;
-    border-radius: 6px;
-    cursor: pointer;
+    box-shadow:
+      0 12px 32px rgba(0,0,0,0.55),
+      inset 0 1px 0 rgba(255,210,140,0.10);
+    padding: 14px 16px;
+    z-index: 50;
     font-size: 13px;
-    transition: background 0.15s;
+    color: var(--cream);
   }
-  .btn:hover { background: var(--accent); }
-  .btn:disabled {
-    background: rgba(255,255,255,0.06);
-    color: rgba(255,255,255,0.4);
-    border-color: rgba(255,255,255,0.1);
-    cursor: not-allowed;
-  }
-  .btn.secondary { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
-  .btn.gold { background: #b8932e; border-color: var(--gold); }
-  .toolbar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-  .product-row {
+  .panel h3 {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--gold-bright);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 12px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 8px;
-    margin-bottom: 8px;
+    gap: 9px;
+    border-bottom: 1px solid var(--gold-line);
+    padding-bottom: 9px;
+    font-weight: 700;
+  }
+  .panel h3 .title-icon {
+    width: 20px; height: 20px;
+    color: var(--gold);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+
+  /* SVG sizing helpers */
+  .icon { display: inline-flex; align-items: center; justify-content: center; }
+  .icon svg, .title-icon svg { width: 100%; height: 100%; display: block; }
+
+  /* ---------- Stats ---------- */
+  #stats {
+    top: 60px; left: 14px;
+    width: 232px;
+  }
+  #stats .row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 8px 4px;
+  }
+  #stats .row + .row { border-top: 1px solid rgba(212,165,116,0.10); }
+  #stats .row .icon {
+    width: 18px; height: 18px;
+    flex: 0 0 18px;
+    color: var(--gold);
+  }
+  #stats .label {
+    flex: 1;
+    color: var(--cream-dim);
+  }
+  #stats .val {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--gold-bright);
+    font-size: 14px;
+  }
+
+  /* ---------- Inventory ---------- */
+  #inventory {
+    top: 60px; right: 14px;
+    width: 248px;
+    max-height: 48vh;
+    overflow-y: auto;
+  }
+  .invRow {
+    display: flex;
+    align-items: center;
     gap: 10px;
+    padding: 7px 4px;
+    border-bottom: 1px solid rgba(212,165,116,0.10);
   }
-  .product-row .info { flex: 1; }
-  .product-row .name { font-weight: 600; }
-  .product-row .meta { font-size: 12px; opacity: 0.7; margin-top: 2px; }
-  .pill {
-    display: inline-block;
+  .invRow:last-child { border-bottom: none; }
+  .invSwatch {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    box-shadow: 0 0 12px currentColor, inset 0 0 4px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.18);
+    flex: 0 0 14px;
+  }
+  .invName { flex: 1; color: var(--cream); }
+  .invCount {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--gold-bright);
+    background: rgba(212,165,116,0.13);
+    border-radius: 5px;
     padding: 2px 8px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 999px;
+    min-width: 28px;
+    text-align: center;
+    font-size: 12px;
+  }
+  .invSeed {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--cream-dim);
     font-size: 11px;
-    margin-right: 4px;
+    background: rgba(139,195,74,0.10);
+    border-radius: 5px;
+    padding: 2px 7px;
+    font-variant-numeric: tabular-nums;
   }
-  #shopArea {
-    position: relative;
-    min-height: 280px;
-    background: linear-gradient(180deg, #2a3a25 0%, #4a5a3a 70%, #5a4a2a 100%);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 12px;
+  .invSeed .icon { width: 11px; height: 11px; color: var(--good); }
+
+  /* ---------- Upgrades ---------- */
+  #upgrades {
+    bottom: 14px; right: 14px;
+    width: 296px;
+    max-height: calc(100vh - 60px - 48vh - 20px);
+    overflow-y: auto;
   }
-  #counter {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background: linear-gradient(180deg, #6a4a2a, #4a3018);
-    border-top: 3px solid #8a5a3a;
-  }
-  .customer {
-    position: absolute;
-    bottom: 60px;
-    transition: left 0.2s linear;
+  .upBtn {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    text-align: left;
+    background: linear-gradient(180deg, rgba(80,55,30,0.45), rgba(50,32,18,0.55));
+    color: var(--cream);
+    border: 1px solid var(--gold-line);
+    border-radius: 9px;
+    padding: 9px 11px;
+    margin: 6px 0;
     cursor: pointer;
+    font: inherit;
+    transition: all 0.14s ease;
   }
-  .customer .body {
-    font-size: 60px;
-    line-height: 1;
-    text-align: center;
+  .upBtn:hover:not(:disabled) {
+    background: linear-gradient(180deg, rgba(120,82,42,0.65), rgba(70,45,25,0.7));
+    border-color: var(--gold);
+    transform: translateX(2px);
   }
-  .customer .bubble {
-    background: #fff;
-    color: #222;
-    padding: 4px 8px;
-    border-radius: 8px;
-    font-size: 11px;
-    text-align: center;
+  .upBtn:active:not(:disabled) { transform: translateX(2px) scale(0.98); }
+  .upBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+  }
+  .upBtn .upIcon {
+    width: 32px; height: 32px;
+    flex: 0 0 32px;
+    color: var(--gold-bright);
+    background: rgba(212,165,116,0.14);
+    border-radius: 7px;
+    padding: 6px;
+    border: 1px solid var(--gold-line);
+  }
+  .upBtn .upMain { flex: 1; min-width: 0; }
+  .upBtn .upTitle {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--gold-bright);
+    margin-bottom: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+  }
+  .upBtn .upPrice {
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--good);
+    background: rgba(139,195,74,0.13);
+    border-radius: 5px;
+    padding: 2px 8px;
+    border: 1px solid rgba(139,195,74,0.2);
     white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    margin-bottom: 4px;
-    position: relative;
   }
-  .customer .bubble::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #fff;
+  .upBtn .upPrice.max {
+    color: var(--gold-bright);
+    background: rgba(212,165,116,0.18);
+    border-color: var(--gold-soft);
   }
-  .customer.served .bubble { background: var(--accent); color: #fff; }
-  .customer.angry .bubble { background: var(--danger); color: #fff; }
-  .toast {
+  .upBtn .upDesc {
+    font-size: 11px;
+    color: var(--cream-dim);
+    line-height: 1.35;
+  }
+
+  /* ---------- Log ---------- */
+  #log {
+    bottom: 14px; left: 14px;
+    width: 320px;
+    max-height: 220px;
+    overflow: hidden;
+    display: flex; flex-direction: column-reverse;
+    pointer-events: none;
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+    z-index: 50;
+  }
+  .logEntry {
+    background: linear-gradient(180deg, rgba(45,30,18,0.94), rgba(28,19,10,0.95));
+    border: 1px solid var(--gold-soft);
+    border-left: 3px solid var(--gold);
+    border-radius: 7px;
+    padding: 7px 12px;
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--cream);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.45);
+    animation: fadeOut 5s forwards;
+  }
+  .logEntry.good { border-left-color: var(--good); }
+  .logEntry.bad  { border-left-color: var(--bad); }
+  .logEntry.info { border-left-color: var(--info); }
+  @keyframes fadeOut {
+    0%   { opacity: 0; transform: translateX(-12px); }
+    8%   { opacity: 1; transform: translateX(0); }
+    80%  { opacity: 1; }
+    100% { opacity: 0; transform: translateX(-4px); }
+  }
+
+  /* ---------- Tooltip ---------- */
+  #tooltip {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(0,0,0,0.85);
-    color: #fff;
-    padding: 12px 16px;
-    border-radius: 8px;
-    border-left: 4px solid var(--accent);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    animation: slideIn 0.2s, fadeOut 0.3s 2.5s forwards;
-    z-index: 100;
-    max-width: 300px;
+    pointer-events: none;
+    z-index: 80;
+    background: linear-gradient(180deg, rgba(45,30,18,0.96), rgba(20,14,8,0.96));
+    border: 1px solid var(--gold-soft);
+    border-radius: 7px;
+    padding: 7px 11px;
+    font-size: 12px;
+    color: var(--cream);
+    display: none;
+    white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.55);
   }
-  .toast.bad { border-left-color: var(--danger); }
-  .toast.gold { border-left-color: var(--gold); }
-  @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-  @keyframes fadeOut { to { opacity: 0; transform: translateX(40px); } }
-  .upgrade-card {
-    background: rgba(255,255,255,0.05);
+
+  /* ---------- Help bar ---------- */
+  #help {
+    position: fixed;
+    top: 60px; left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, rgba(45,30,18,0.85), rgba(28,19,10,0.85));
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--gold-soft);
+    border-radius: 999px;
+    padding: 7px 18px;
+    font-size: 12px;
+    color: var(--cream-dim);
+    z-index: 40;
+    pointer-events: none;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+  #help kbd {
+    display: inline-block;
+    background: rgba(212,165,116,0.18);
+    border: 1px solid var(--gold-soft);
+    border-radius: 4px;
+    padding: 1px 7px;
+    margin: 0 2px;
+    color: var(--gold-bright);
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: 600;
+  }
+  #help button {
+    pointer-events: auto;
+    background: rgba(212,165,116,0.22);
+    border: 1px solid var(--gold-soft);
+    color: var(--gold-bright);
+    border-radius: 999px;
+    padding: 3px 10px 3px 8px;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  #help button:hover {
+    background: rgba(212,165,116,0.38);
+    border-color: var(--gold);
+    transform: translateY(-1px);
+  }
+  #help button kbd {
+    background: rgba(0,0,0,0.3);
+    border-color: rgba(255,210,140,0.35);
+    color: var(--gold-bright);
+    font-size: 10px;
+    padding: 0 5px;
+    margin: 0 0 0 2px;
+  }
+  #help button .icon { width: 13px; height: 13px; color: var(--gold-bright); }
+
+  /* ---------- Seed picker ---------- */
+  #seedPicker {
+    position: fixed;
+    z-index: 90;
+    background: linear-gradient(180deg, rgba(45,30,18,0.97), rgba(20,14,8,0.97));
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--gold-soft);
     border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 10px;
+    padding: 10px;
+    display: none;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+    min-width: 210px;
   }
-  .upgrade-card .title { font-weight: 600; }
-  .upgrade-card .desc { font-size: 12px; opacity: 0.75; margin: 4px 0 10px; }
-  details { margin-top: 12px; }
-  summary { cursor: pointer; padding: 8px 0; font-weight: 600; }
-  .muted { opacity: 0.6; font-size: 12px; }
+  #seedPicker .seedTitle {
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold-bright);
+    margin-bottom: 8px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--gold-soft);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  #seedPicker .seedTitle .icon { width: 14px; height: 14px; color: var(--good); }
+  #seedPicker .seedBtn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(180deg, rgba(80,55,30,0.4), rgba(50,32,18,0.5));
+    color: var(--cream);
+    border: 1px solid var(--gold-line);
+    border-radius: 7px;
+    padding: 7px 11px;
+    margin: 3px 0;
+    width: 100%;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    transition: all 0.12s;
+  }
+  #seedPicker .seedBtn:hover:not(:disabled) {
+    background: linear-gradient(180deg, rgba(120,82,42,0.6), rgba(70,45,25,0.65));
+    border-color: var(--gold);
+  }
+  #seedPicker .seedBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #seedPicker .seedBtn .swatch {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 0 8px currentColor, inset 0 0 3px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.18);
+    flex: 0 0 12px;
+  }
+  #seedPicker .seedBtn .seedName { flex: 1; text-align: left; }
+  #seedPicker .seedBtn .seedCount {
+    color: var(--gold-bright);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  #seedPicker .seedEmpty {
+    color: var(--cream-dim);
+    font-size: 12px;
+    padding: 10px 4px 4px;
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* ---------- Custom scrollbars ---------- */
+  .panel::-webkit-scrollbar { width: 8px; }
+  .panel::-webkit-scrollbar-track { background: rgba(0,0,0,0.25); border-radius: 4px; }
+  .panel::-webkit-scrollbar-thumb {
+    background: var(--gold-line);
+    border-radius: 4px;
+  }
+  .panel::-webkit-scrollbar-thumb:hover { background: var(--gold-soft); }
 </style>
 </head>
 <body>
@@ -302,531 +468,1651 @@
     <a href="farm.html" class="active">🌿 Bud Tycoon</a>
   </div>
 </nav>
-<div id="app">
-  <header>
-    <h1><span class="leaf">🌿</span> Bud Tycoon</h1>
-    <a class="reset-link" href="#" id="resetBtn">Reset Progress</a>
-  </header>
 
-  <div id="stats">
-    <div class="stat"><div class="label">Cash</div><div class="val" id="cashVal">$0</div></div>
-    <div class="stat"><div class="label">Buds (g)</div><div class="val" id="budVal">0</div></div>
-    <div class="stat"><div class="label">Inventory</div><div class="val" id="invVal">0</div></div>
-    <div class="stat"><div class="label">Reputation</div><div class="val" id="repVal">0</div></div>
-    <div class="stat"><div class="label">Day</div><div class="val" id="dayVal">1</div></div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab active" data-tab="grow">🌱 Grow</button>
-    <button class="tab" data-tab="pack">📦 Package</button>
-    <button class="tab" data-tab="shop">🛒 Shop</button>
-    <button class="tab" data-tab="upgrades">⚡ Upgrades</button>
-  </div>
-
-  <div class="panel" id="panel"></div>
+<div id="help">
+  <kbd>Click</kbd> walk · <kbd>Drag</kbd> rotate · <kbd>Right-drag</kbd> pan · <kbd>Scroll</kbd> zoom
+  <button id="recenterBtn" type="button"><span class="icon" data-icon="recenter"></span>Recenter <kbd>R</kbd></button>
 </div>
 
-<script>
-(() => {
-  // ===== Game state =====
-  const SAVE_KEY = 'bud_tycoon_v1';
+<div id="stats" class="panel">
+  <h3><span class="title-icon" data-icon="store"></span>The Shop</h3>
+  <div class="row">
+    <span class="icon" data-icon="money"></span>
+    <span class="label">Cash</span>
+    <span class="val" id="statMoney">$0</span>
+  </div>
+  <div class="row">
+    <span class="icon" data-icon="star"></span>
+    <span class="label">Reputation</span>
+    <span class="val" id="statRep">100</span>
+  </div>
+  <div class="row">
+    <span class="icon" data-icon="sun"></span>
+    <span class="label">Day</span>
+    <span class="val" id="statDay">1</span>
+  </div>
+  <div class="row">
+    <span class="icon" data-icon="box"></span>
+    <span class="label">Storage</span>
+    <span class="val" id="statStore">0 / 30</span>
+  </div>
+</div>
 
-  const STAGES = [
-    { name: 'Empty', emoji: '🪴', dur: 0 },
-    { name: 'Seedling', emoji: '🌱', dur: 15_000 },
-    { name: 'Vegetative', emoji: '🌿', dur: 30_000 },
-    { name: 'Flowering', emoji: '🌾', dur: 45_000 },
-    { name: 'Ready', emoji: '🥦', dur: Infinity },
-  ];
+<div id="inventory" class="panel">
+  <h3><span class="title-icon" data-icon="inventory"></span>Inventory</h3>
+  <div id="invList"></div>
+</div>
 
-  // Products: grams required → price
-  const PRODUCTS = [
-    { id: 'joint',   name: 'Joint',     g: 1,  price: 12,  emoji: '🚬' },
-    { id: 'gram',    name: 'Gram',      g: 1,  price: 15,  emoji: '🌿' },
-    { id: 'eighth',  name: 'Eighth',    g: 3.5, price: 50, emoji: '📦' },
-    { id: 'quarter', name: 'Quarter',   g: 7,  price: 95,  emoji: '📦' },
-    { id: 'half',    name: 'Half-O',    g: 14, price: 180, emoji: '📦' },
-    { id: 'ounce',   name: 'Ounce',     g: 28, price: 340, emoji: '📦' },
-  ];
+<div id="upgrades" class="panel">
+  <h3><span class="title-icon" data-icon="upgrades"></span>Upgrades</h3>
+  <div id="upList"></div>
+</div>
 
-  const UPGRADES = [
-    { id: 'pot',         name: 'Buy Pot',         desc: 'Add another grow pot.',                 cost: 80,  apply: s => s.pots.push(makePot()), max: 16 },
-    { id: 'lights',      name: 'Better Lights',   desc: 'Plants grow 25% faster.',                cost: 250, apply: s => { s.growthMult *= 1.25; }, max: 5 },
-    { id: 'seeds',       name: 'Premium Genetics',desc: '+1g harvest yield per plant.',           cost: 200, apply: s => { s.yieldBonus += 1; }, max: 10 },
-    { id: 'marketing',   name: 'Marketing',       desc: 'Customers arrive 25% more often.',       cost: 350, apply: s => { s.customerRateMult *= 1.25; }, max: 6 },
-    { id: 'wallet',      name: 'Bigger Wallets',  desc: 'Customers willing to pay 15% more.',     cost: 400, apply: s => { s.priceMult *= 1.15; }, max: 6 },
-    { id: 'patience',    name: 'Comfy Lounge',    desc: 'Customers wait 25% longer.',             cost: 300, apply: s => { s.patienceMult *= 1.25; }, max: 5 },
-    { id: 'autowater',   name: 'Auto-Water',      desc: 'Plants don\'t need watering.',           cost: 600, apply: s => { s.autoWater = true; }, max: 1 },
-  ];
+<div id="log"></div>
+<div id="tooltip"></div>
+<div id="seedPicker"></div>
 
-  function makePot() {
-    return { stage: 0, plantedAt: 0, watered: true, lastWater: 0 };
+<canvas id="game"></canvas>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
   }
+}
+</script>
 
-  function defaultState() {
-    return {
-      cash: 100,
-      buds: 0,                // grams of harvested bud
-      inv: {},                // product id -> qty
-      rep: 0,
-      day: 1,
-      pots: [makePot(), makePot(), makePot(), makePot()],
-      growthMult: 1,
-      yieldBonus: 0,
-      customerRateMult: 1,
-      priceMult: 1,
-      patienceMult: 1,
-      autoWater: false,
-      upgradeLevels: {},
-      lastTick: Date.now(),
-      seedCost: 10,
-      customers: [], // active in shop
-    };
-  }
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-  let state;
-  function load() {
-    try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      if (!raw) return defaultState();
-      const s = JSON.parse(raw);
-      // ensure new fields
-      const d = defaultState();
-      return Object.assign(d, s, { customers: [] });
-    } catch { return defaultState(); }
-  }
-  function save() {
-    const toSave = { ...state, customers: [] };
-    localStorage.setItem(SAVE_KEY, JSON.stringify(toSave));
-  }
-  state = load();
+// ============================================================
+// SVG icon set (matches the wood/dispensary theme)
+// ============================================================
+const ICON = {
+  // panel headers / stats
+  store:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l1.6-4h14.8L21 8"/><path d="M3 8h18v3a3 3 0 01-6 0 3 3 0 01-6 0 3 3 0 01-6 0V8z"/><path d="M5 11v9h14v-9"/><path d="M10 20v-5h4v5"/></svg>`,
+  inventory: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l8-4 8 4v10l-8 4-8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>`,
+  upgrades:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v15M5 10l7-7 7 7"/><path d="M4 21h16"/></svg>`,
+  money:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.5C14 8.5 13 8 12 8s-2.5.7-2.5 2 1.5 1.5 2.5 2 2.5 1 2.5 2-1.5 2-2.5 2-2-.5-2.5-1.5"/><path d="M12 6v1.5M12 16.5V18"/></svg>`,
+  star:      `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.5l2.7 5.6 6.1.8-4.4 4.3 1.1 6L12 17.4l-5.5 2.8 1.1-6-4.4-4.3 6.1-.8z"/></svg>`,
+  sun:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4 12H2M22 12h-2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"/></svg>`,
+  box:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>`,
+  seed:      `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-3 4-5 7-5 11 0 3 2 6 5 6s5-3 5-6c0-4-2-7-5-11z"/><path d="M12 9v9" stroke="#0c0805" stroke-width="1.5" fill="none"/></svg>`,
+  // upgrade icons
+  plot:        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13c-3-1.5-3-5-3-7 3 0 5 2 5 4"/><path d="M12 13c3-1.5 3-5 3-7-3 0-5 2-5 4"/><path d="M12 13V7"/><path d="M5 14l1.5 7h11L19 14z"/></svg>`,
+  fertilizer:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="8" width="6" height="13" rx="1"/><path d="M10 8V5h4v3M9 12h6"/><circle cx="12" cy="16" r="0.8" fill="currentColor" stroke="none"/><circle cx="11" cy="18" r="0.6" fill="currentColor" stroke="none"/></svg>`,
+  truck:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="12" height="8" rx="1"/><path d="M14 11h4l3 3v2h-7"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>`,
+  megaphone:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4l13 6V4z"/><path d="M16 9a3 3 0 010 6"/><path d="M5 14v4l2 2"/></svg>`,
+  shelves:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="14" x2="21" y2="14"/><rect x="6" y="5.5" width="3" height="2.5"/><rect x="12" y="10.5" width="3" height="2.5"/><rect x="6" y="15.5" width="3" height="2.5"/></svg>`,
+  crown:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4 3 5-6 5 6 4-3-2 11H5z"/><path d="M5 17h14"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>`,
+  rare:        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19c0-7 6-13 14-14-1 8-7 14-14 14M5 19l4-4"/><path d="M18 5l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/></svg>`,
+  recenter:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>`,
+};
 
-  // ===== Notifications =====
-  function toast(msg, kind) {
-    const el = document.createElement('div');
-    el.className = 'toast' + (kind ? ' ' + kind : '');
-    el.textContent = msg;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
-  }
-
-  // ===== UI =====
-  const panel = document.getElementById('panel');
-  let activeTab = 'grow';
-
-  document.querySelectorAll('.tab').forEach(t => {
-    t.addEventListener('click', () => {
-      activeTab = t.dataset.tab;
-      document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
-      render();
-    });
-  });
-
-  document.getElementById('resetBtn').addEventListener('click', (e) => {
-    e.preventDefault();
-    if (confirm('Reset all progress?')) {
-      localStorage.removeItem(SAVE_KEY);
-      state = defaultState();
-      render();
+// Paint <span data-icon="name"> placeholders with their SVG
+function paintIcons(scope = document) {
+  scope.querySelectorAll('[data-icon]').forEach(el => {
+    const name = el.getAttribute('data-icon');
+    if (ICON[name] && !el.dataset.painted) {
+      el.innerHTML = ICON[name];
+      el.dataset.painted = '1';
     }
   });
+}
+paintIcons();
 
-  function fmt$(n) { return '$' + Math.floor(n).toLocaleString(); }
+// ============================================================
+// Config
+// ============================================================
+const STRAINS = [
+  { name: 'Green Haze',  color: 0x6dd35a, price: 25,  growTime: 18, rarity: 0.50 },
+  { name: 'Purple Kush', color: 0xb86bdc, price: 55,  growTime: 28, rarity: 0.28 },
+  { name: 'Blue Dream',  color: 0x55a8ff, price: 95,  growTime: 42, rarity: 0.15 },
+  { name: 'Gold OG',     color: 0xffc940, price: 200, growTime: 65, rarity: 0.07 },
+];
+const STRAIN_BY_NAME = Object.fromEntries(STRAINS.map(s => [s.name, s]));
 
-  function updateStats() {
-    document.getElementById('cashVal').textContent = fmt$(state.cash);
-    document.getElementById('budVal').textContent = state.buds.toFixed(1);
-    const totalInv = Object.values(state.inv).reduce((a, b) => a + b, 0);
-    document.getElementById('invVal').textContent = totalInv;
-    document.getElementById('repVal').textContent = state.rep;
-    document.getElementById('dayVal').textContent = state.day;
-  }
+const CHAR_SPEED = 7.0;
+const PLOT_GRID = { cols: 4, rows: 3, spacing: 2.4, originX: -12, originZ: -10 };
+const COUNTER_Z = 9;
+const CRATE_Z = -2;
+const MAP_HALF = 18;
 
-  function stageOf(pot) {
-    if (pot.stage === 0) return 0;
-    if (pot.stage === 4) return 4;
-    const elapsed = Date.now() - pot.plantedAt;
-    let cum = 0;
-    for (let i = 1; i <= 3; i++) {
-      cum += STAGES[i].dur / state.growthMult;
-      if (elapsed < cum) return i;
+// ============================================================
+// Scene setup
+// ============================================================
+const canvas = document.getElementById('game');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x14100c);
+scene.fog = new THREE.Fog(0x14100c, 50, 95);
+
+// Isometric-style angled camera + OrbitControls
+const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 200);
+camera.position.set(26, 28, 26);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.0, -1);     // building center (lifted slightly)
+controls.minDistance = 16;
+controls.maxDistance = 70;
+controls.minPolarAngle = 0.15;       // can't tilt below ~9°
+controls.maxPolarAngle = Math.PI / 2.4;  // can't tilt past ~75°
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.screenSpacePanning = false;
+controls.update();
+controls.saveState();                // remember default for Recenter
+
+const ambient = new THREE.AmbientLight(0xffe6c6, 0.5);
+scene.add(ambient);
+const hemi = new THREE.HemisphereLight(0xfff4dc, 0x402a18, 0.45);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff4dc, 1.05);
+sun.position.set(20, 30, 14);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -28;
+sun.shadow.camera.right = 28;
+sun.shadow.camera.top = 28;
+sun.shadow.camera.bottom = -28;
+sun.shadow.camera.near = 1;
+sun.shadow.camera.far = 80;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+// Post-processing: bloom for glowing emissives + nice tone mapped output
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight - 48),
+  0.45,   // strength
+  0.65,   // radius
+  0.78    // threshold
+);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
+
+function resize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight - 48;
+  renderer.setSize(w, h, false);
+  composer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ============================================================
+// World: rooms, walls, furniture (indoor isometric dispensary)
+// ============================================================
+const world = new THREE.Group();
+scene.add(world);
+
+// Pathfinding obstacles list (axis-aligned XZ rectangles)
+const blockers = [];
+function pushBlocker(x1, z1, x2, z2) {
+  blockers.push({
+    x1: Math.min(x1, x2), z1: Math.min(z1, z2),
+    x2: Math.max(x1, x2), z2: Math.max(z1, z2),
+  });
+}
+
+// ---- Helpers ----
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+function makeTextSprite(text, opt = {}) {
+  const w = opt.w || 480, h = opt.h || 110;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = opt.bg || 'rgba(28,18,10,0.88)';
+  roundRect(ctx, 0, 0, w, h, 22); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,210,140,0.5)';
+  ctx.lineWidth = 3;
+  roundRect(ctx, 4, 4, w-8, h-8, 18); ctx.stroke();
+  ctx.fillStyle = opt.fg || '#ffd896';
+  ctx.font = 'bold 52px "Segoe UI", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, w/2, h/2);
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+  const sp = new THREE.Sprite(mat);
+  sp.scale.set(w/64, h/64, 1);
+  return sp;
+}
+
+function addBox(x, y, z, w, h, d, color, opts = {}) {
+  const m = new THREE.Mesh(
+    new THREE.BoxGeometry(w, h, d),
+    new THREE.MeshStandardMaterial({
+      color, roughness: opts.rough ?? 0.75, metalness: opts.metal ?? 0,
+      emissive: opts.emissive ?? 0x000000, emissiveIntensity: opts.emissiveIntensity ?? 0,
+      transparent: opts.transparent ?? false, opacity: opts.opacity ?? 1
+    })
+  );
+  m.position.set(x, y, z);
+  m.castShadow = opts.cast !== false;
+  m.receiveShadow = true;
+  world.add(m);
+  return m;
+}
+
+// ---- Procedural wood-plank floor texture ----
+function shadeColor(hex, delta) {
+  const h = hex.replace('#','');
+  const r = parseInt(h.substr(0,2),16), g = parseInt(h.substr(2,2),16), b = parseInt(h.substr(4,2),16);
+  const c = v => Math.max(0, Math.min(255, Math.round(v + delta)));
+  return `rgb(${c(r)},${c(g)},${c(b)})`;
+}
+function makeFloorTexture(base, gap, accent, planks = 8) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, 512, 512);
+  const pw = 512 / planks;
+  for (let i = 0; i < planks; i++) {
+    const x = i * pw;
+    ctx.fillStyle = shadeColor(base, (Math.random() - 0.5) * 22);
+    ctx.fillRect(x, 0, pw, 512);
+    ctx.strokeStyle = accent; ctx.lineWidth = 1;
+    for (let j = 0; j < 5; j++) {
+      const yy = Math.random() * 512;
+      ctx.beginPath();
+      ctx.moveTo(x + 2, yy);
+      ctx.bezierCurveTo(x + pw*0.3, yy + 4, x + pw*0.7, yy - 4, x + pw - 2, yy);
+      ctx.stroke();
     }
-    return 4;
-  }
-
-  function renderGrow() {
-    panel.innerHTML = `
-      <div class="toolbar">
-        <button class="btn" id="plantAll">Plant All Empty (${PRODUCTS_COST_TEXT()})</button>
-        ${state.autoWater ? '' : '<button class="btn secondary" id="waterAll">Water All</button>'}
-        <button class="btn secondary" id="harvestAll">Harvest Ready</button>
-        <span class="muted" style="align-self:center;margin-left:auto;">Click a pot to plant or harvest. Seeds cost ${fmt$(state.seedCost)}.</span>
-      </div>
-      <div class="grid" id="potsGrid"></div>
-    `;
-    const grid = document.getElementById('potsGrid');
-    state.pots.forEach((pot, i) => {
-      const stage = stageOf(pot);
-      const el = document.createElement('div');
-      el.className = 'pot' + (pot.stage === 0 ? ' empty' : '') + (stage === 4 ? ' ready' : '');
-      const stageInfo = STAGES[stage];
-      let progress = 0;
-      if (stage > 0 && stage < 4) {
-        const elapsed = Date.now() - pot.plantedAt;
-        let cum = 0;
-        for (let s = 1; s <= stage - 1; s++) cum += STAGES[s].dur / state.growthMult;
-        const stageDur = STAGES[stage].dur / state.growthMult;
-        progress = ((elapsed - cum) / stageDur) * 100;
-      } else if (stage === 4) progress = 100;
-      el.innerHTML = `
-        <div class="plant">${stageInfo.emoji}</div>
-        <div class="stage">${pot.stage === 0 ? 'Empty pot' : stageInfo.name}</div>
-        <div class="progress"><div style="width:${progress}%"></div></div>
-      `;
-      el.addEventListener('click', () => onPotClick(i));
-      grid.appendChild(el);
-    });
-    document.getElementById('plantAll').addEventListener('click', plantAll);
-    document.getElementById('harvestAll').addEventListener('click', harvestAll);
-    const wa = document.getElementById('waterAll');
-    if (wa) wa.addEventListener('click', () => toast('Auto-watered ✨'));
-  }
-
-  function PRODUCTS_COST_TEXT() {
-    const empty = state.pots.filter(p => p.stage === 0).length;
-    return `${empty} × ${fmt$(state.seedCost)}`;
-  }
-
-  function onPotClick(i) {
-    const pot = state.pots[i];
-    const stage = stageOf(pot);
-    if (pot.stage === 0) {
-      plant(i);
-    } else if (stage === 4) {
-      harvest(i);
-    } else {
-      toast('Still growing — be patient! 🌱');
+    ctx.strokeStyle = gap; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 512); ctx.stroke();
+    for (let k = 0; k < 3; k++) {
+      const yy = Math.floor(Math.random() * 512);
+      ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + pw, yy); ctx.stroke();
     }
   }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 4;
+  return tex;
+}
 
-  function plant(i) {
-    if (state.cash < state.seedCost) return toast('Not enough cash for a seed.', 'bad');
-    state.cash -= state.seedCost;
-    state.pots[i] = { stage: 1, plantedAt: Date.now() };
-    save();
-    render();
-  }
+// Outside ground (sidewalk)
+{
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(120, 120),
+    new THREE.MeshStandardMaterial({ color: 0x161213, roughness: 1.0 })
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = -0.02;
+  m.receiveShadow = true;
+  world.add(m);
+}
 
-  function plantAll() {
-    let n = 0;
-    for (let i = 0; i < state.pots.length; i++) {
-      if (state.pots[i].stage === 0 && state.cash >= state.seedCost) {
-        state.cash -= state.seedCost;
-        state.pots[i] = { stage: 1, plantedAt: Date.now() };
-        n++;
-      }
+// Room floors
+function roomFloor(x, z, w, d, tex, repeat = 4) {
+  const t = tex.clone();
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(w / repeat, d / repeat);
+  t.needsUpdate = true;
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, d),
+    new THREE.MeshStandardMaterial({ map: t, roughness: 0.95 })
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.position.set(x, 0.01, z);
+  m.receiveShadow = true;
+  world.add(m);
+}
+
+const floorGrow  = makeFloorTexture('#5e8d3e', '#1f2c10', '#36521e');  // greenhouse green
+const floorDeliv = makeFloorTexture('#7e542e', '#2c1c10', '#5b3a18');  // dark wood
+const floorSell  = makeFloorTexture('#c69468', '#3c2410', '#8c5e34');  // light hardwood
+
+roomFloor(-8.5, -8,    17, 14, floorGrow,  4);   // grow:    x[-17..0],  z[-15..-1]
+roomFloor( 8.5, -8,    17, 14, floorDeliv, 4);   // storage: x[0..17],   z[-15..-1]
+roomFloor( 0,    6.5,  34, 15, floorSell,  5);   // sell:    x[-17..17], z[-1..14]
+
+// ---- Walls ----
+// Only build the BACK walls (north + west) and inner partitions; south & east
+// are cut away so the camera can see inside the building.
+function wall(x1, z1, x2, z2, height = 3.6, color = 0xead5b3) {
+  const dx = Math.abs(x2 - x1), dz = Math.abs(z2 - z1);
+  const thickness = 0.4;
+  const w = dx > dz ? dx : thickness;
+  const d = dx > dz ? thickness : dz;
+  const cx = (x1 + x2) / 2, cz = (z1 + z2) / 2;
+  addBox(cx, height / 2, cz, w, height, d, color, { rough: 0.95 });
+  addBox(cx, 0.18, cz, w + 0.05, 0.36, d + 0.05, 0x4a2e1c, { cast: false });   // baseboard
+  addBox(cx, height - 0.12, cz, w + 0.05, 0.22, d + 0.05, 0x6b4226, { cast: false }); // crown
+  pushBlocker(cx - w/2, cz - d/2, cx + w/2, cz + d/2);
+}
+
+// Outer back walls
+wall(-17, -15,  17, -15, 3.8);   // north
+wall(-17, -15, -17,  14, 3.8);   // west
+
+// Inner partitions (lower so camera sees over them)
+wall(  0, -15,   0,  -1, 2.0, 0xe6cfa8);   // grow / storage divider
+wall(-17,  -1, -11,  -1, 2.0, 0xe6cfa8);   // sell-divider left
+wall( -7,  -1,   7,  -1, 2.0, 0xe6cfa8);   // sell-divider middle
+wall( 11,  -1,  17,  -1, 2.0, 0xe6cfa8);   // sell-divider right
+
+// Doormat thresholds
+function doormat(x, z, w = 3.5, d = 1.2, color = 0x3a2418) {
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, d),
+    new THREE.MeshStandardMaterial({ color, roughness: 1.0 })
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.position.set(x, 0.03, z);
+  m.receiveShadow = true;
+  world.add(m);
+}
+doormat(-9, -1);
+doormat( 9, -1);
+
+// ---- Room signs (mounted on back wall) ----
+const sgGrow  = makeTextSprite('🌱 GROW ROOM');
+sgGrow.position.set(-8.5, 3.3, -14.5);  world.add(sgGrow);
+const sgDeliv = makeTextSprite('📦 STORAGE');
+sgDeliv.position.set( 8.5, 3.3, -14.5); world.add(sgDeliv);
+const sgSell  = makeTextSprite('� DISPENSARY');
+sgSell.position.set(-13.5, 3.0, -0.6);  world.add(sgSell);
+
+// ---- Selling counter / display cases ----
+{
+  // Two counter sections with a center gap so the player can pass through
+  addBox(-7,  0.5, COUNTER_Z, 11, 1, 1.3, 0x6b4226);
+  addBox( 7,  0.5, COUNTER_Z, 11, 1, 1.3, 0x6b4226);
+  addBox(-7,  1.06, COUNTER_Z, 11.1, 0.12, 1.4, 0xd4a574);
+  addBox( 7,  1.06, COUNTER_Z, 11.1, 0.12, 1.4, 0xd4a574);
+  // Glass jars displaying strains
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 4; i++) {
+      const x = side * (1.8 + i * 2.5);
+      const strain = STRAINS[i % STRAINS.length];
+      const jar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.27, 0.32, 0.7, 14),
+        new THREE.MeshStandardMaterial({
+          color: strain.color, transparent: true, opacity: 0.6,
+          roughness: 0.18, metalness: 0.15
+        })
+      );
+      jar.position.set(x, 1.45, COUNTER_Z);
+      jar.castShadow = true;
+      world.add(jar);
+      const lid = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.32, 0.32, 0.1, 14),
+        new THREE.MeshStandardMaterial({ color: 0x3a2e1a })
+      );
+      lid.position.set(x, 1.85, COUNTER_Z);
+      world.add(lid);
     }
-    if (n) toast(`Planted ${n} seed${n > 1 ? 's' : ''} 🌱`);
-    save(); render();
   }
+  // Cash register at the gap
+  addBox(0, 1.35, COUNTER_Z, 0.9, 0.55, 0.5, 0x222933);
+  addBox(0, 1.7,  COUNTER_Z - 0.05, 0.55, 0.05, 0.35, 0x55ff88, { emissive: 0x224422, emissiveIntensity: 0.6 });
+}
 
-  function harvest(i) {
-    const pot = state.pots[i];
-    if (stageOf(pot) !== 4) return;
-    const yieldG = (5 + Math.random() * 5) + state.yieldBonus;
-    state.buds += yieldG;
-    state.pots[i] = makePot();
-    pot.stage = 0;
-    toast(`Harvested ${yieldG.toFixed(1)}g 🥦`);
-    save(); render();
+// ---- Lounge area (left side of selling room) ----
+{
+  addBox(-13.5, 0.6, 11.0, 3.6, 0.5, 1.6, 0x6a4a8a);            // sofa seat
+  addBox(-13.5, 1.2, 11.7, 3.6, 1.2, 0.4, 0x6a4a8a);            // sofa back
+  addBox(-15.2, 0.85, 11.0, 0.4, 0.9, 1.6, 0x4a3060);           // L arm
+  addBox(-11.8, 0.85, 11.0, 0.4, 0.9, 1.6, 0x4a3060);           // R arm
+  addBox(-13.5, 0.4, 9.2, 1.6, 0.1, 1.0, 0x3a2418);             // table top
+  addBox(-13.5, 0.2, 9.2, 1.5, 0.4, 0.9, 0x6b4226);             // table base
+  addBox(-15.6, 1.45, 8.8, 0.1, 2.9, 0.1, 0x222222);            // lamp pole
+  const shade = new THREE.Mesh(
+    new THREE.ConeGeometry(0.45, 0.55, 14, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: 0xffe6a8, emissive: 0xffaa44, emissiveIntensity: 0.7, side: THREE.DoubleSide
+    })
+  );
+  shade.position.set(-15.6, 2.85, 8.8);
+  world.add(shade);
+  const pl = new THREE.PointLight(0xffd080, 0.7, 9);
+  pl.position.set(-15.6, 2.6, 8.8);
+  world.add(pl);
+  const rug = new THREE.Mesh(
+    new THREE.PlaneGeometry(5, 2.6),
+    new THREE.MeshStandardMaterial({ color: 0x8a3530, roughness: 1.0 })
+  );
+  rug.rotation.x = -Math.PI / 2;
+  rug.position.set(-13.5, 0.025, 10.0);
+  rug.receiveShadow = true;
+  world.add(rug);
+}
+
+// ---- Storage shelving + dock (right room) ----
+{
+  for (let i = 0; i < 3; i++) {
+    const z = -13 + i * 4.4;
+    addBox(15.4, 0.55, z, 1.0, 1.1, 1.6, 0x6b4226);
+    addBox(15.4, 1.12, z, 1.05, 0.08, 1.65, 0xd4a574);
+    addBox(15.4, 1.7,  z, 1.0, 1.1, 1.6, 0x6b4226);
+    addBox(15.4, 2.27, z, 1.05, 0.08, 1.65, 0xd4a574);
+    addBox(15.4, 1.32, z - 0.4, 0.6, 0.45, 0.6, 0xa0703a);
+    addBox(15.4, 2.47, z + 0.3, 0.55, 0.45, 0.55, 0xa0703a);
   }
+  // Loading dock door on north wall
+  addBox(8.5, 1.5, -14.7, 4.5, 3.0, 0.1, 0x3a2418, { cast: false });
+  addBox(8.5, 1.5, -14.55, 4.3, 2.8, 0.05, 0x6b4226, { cast: false });
+  // Striped drop pad
+  const pad = new THREE.Mesh(
+    new THREE.PlaneGeometry(8, 5),
+    new THREE.MeshStandardMaterial({ color: 0x2c2018, roughness: 1.0 })
+  );
+  pad.rotation.x = -Math.PI / 2;
+  pad.position.set(8.5, 0.04, -8);
+  pad.receiveShadow = true;
+  world.add(pad);
+  for (let i = -2; i <= 2; i++) {
+    addBox(8.5 + i * 1.5, 0.05, -10.4, 1.2, 0.02, 0.2, 0xffc940, { cast: false });
+    addBox(8.5 + i * 1.5, 0.05, -5.6, 1.2, 0.02, 0.2, 0xffc940, { cast: false });
+  }
+}
 
-  function harvestAll() {
-    let total = 0;
-    state.pots.forEach((pot, i) => {
-      if (stageOf(pot) === 4) {
-        total += (5 + Math.random() * 5) + state.yieldBonus;
-        state.pots[i] = makePot();
-      }
-    });
-    if (total > 0) {
-      state.buds += total;
-      toast(`Harvested ${total.toFixed(1)}g total 🥦`, 'gold');
-    } else {
-      toast('Nothing ready to harvest.');
+// ---- Grow room overhead lights ----
+{
+  for (let r = 0; r < 2; r++) {
+    for (let c = 0; c < 2; c++) {
+      const x = -13 + c * 8.5;
+      const z = -12 + r * 9;
+      addBox(x, 3.15, z, 2.6, 0.12, 1.0, 0xeaeaea, { cast: false });
+      const glow = new THREE.Mesh(
+        new THREE.PlaneGeometry(2.4, 0.8),
+        new THREE.MeshBasicMaterial({ color: 0xfff8a8, transparent: true, opacity: 0.7 })
+      );
+      glow.rotation.x = -Math.PI / 2;
+      glow.position.set(x, 3.08, z);
+      world.add(glow);
+      const pl = new THREE.PointLight(0xfff0c0, 0.35, 8);
+      pl.position.set(x, 2.8, z);
+      world.add(pl);
     }
-    save(); render();
   }
+}
 
-  // ===== Package =====
-  function renderPack() {
-    panel.innerHTML = `
-      <div class="muted" style="margin-bottom:12px;">
-        Convert raw buds into sellable products. You have <b>${state.buds.toFixed(1)}g</b> available.
-      </div>
-      <div id="prodList"></div>
-    `;
-    const list = document.getElementById('prodList');
-    PRODUCTS.forEach(p => {
-      const have = state.inv[p.id] || 0;
-      const canMake = Math.floor(state.buds / p.g);
-      const row = document.createElement('div');
-      row.className = 'product-row';
-      row.innerHTML = `
-        <div style="font-size:30px;">${p.emoji}</div>
-        <div class="info">
-          <div class="name">${p.name}</div>
-          <div class="meta">
-            <span class="pill">${p.g}g</span>
-            <span class="pill">${fmt$(p.price * state.priceMult)} sell</span>
-            <span class="pill">In stock: ${have}</span>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;">
-          <button class="btn" data-pid="${p.id}" data-n="1" ${canMake < 1 ? 'disabled' : ''}>+1</button>
-          <button class="btn" data-pid="${p.id}" data-n="5" ${canMake < 5 ? 'disabled' : ''}>+5</button>
-          <button class="btn secondary" data-pid="${p.id}" data-n="max" ${canMake < 1 ? 'disabled' : ''}>Max (${canMake})</button>
-        </div>
-      `;
-      list.appendChild(row);
-    });
-    list.addEventListener('click', e => {
-      const b = e.target.closest('button[data-pid]');
-      if (!b) return;
-      const p = PRODUCTS.find(x => x.id === b.dataset.pid);
-      let n = b.dataset.n === 'max' ? Math.floor(state.buds / p.g) : parseInt(b.dataset.n, 10);
-      n = Math.min(n, Math.floor(state.buds / p.g));
-      if (n < 1) return;
-      state.buds -= n * p.g;
-      state.inv[p.id] = (state.inv[p.id] || 0) + n;
-      toast(`Packaged ${n} × ${p.name} 📦`);
-      save(); render();
-    });
-  }
+// ---- Furniture blockers (counters, sofa, table, shelves) ----
+pushBlocker(-12.5, COUNTER_Z - 0.65, -1.5, COUNTER_Z + 0.65);   // left counter
+pushBlocker( 1.5,  COUNTER_Z - 0.65, 12.5, COUNTER_Z + 0.65);   // right counter
+pushBlocker(-15.4, 10.0, -11.6, 12.0);                          // sofa (incl. arms + back)
+pushBlocker(-14.3, 8.7, -12.7, 9.7);                            // coffee table
+for (let _i = 0; _i < 3; _i++) {
+  const _z = -13 + _i * 4.4;
+  pushBlocker(14.9, _z - 0.85, 15.9, _z + 0.85);                // storage shelves
+}
 
-  // ===== Shop =====
-  let shopAreaWidth = 0;
-  let lastCustomerSpawn = 0;
+// ============================================================
+// Pathfinding (grid-based A* with line-of-sight smoothing)
+// ============================================================
+const PF_CELL = 0.5;
+const PF_BOUNDS = { minX: -18, maxX: 18, minZ: -16, maxZ: 17 };
+const PF_W = Math.ceil((PF_BOUNDS.maxX - PF_BOUNDS.minX) / PF_CELL);
+const PF_H = Math.ceil((PF_BOUNDS.maxZ - PF_BOUNDS.minZ) / PF_CELL);
+const PF_PAD = 0.45;  // character body padding around obstacles
 
-  function renderShop() {
-    panel.innerHTML = `
-      <div class="muted" style="margin-bottom:8px;">
-        Customers walk to the counter. Click them to sell what they want.
-      </div>
-      <div id="shopArea">
-        <div id="counter"></div>
-      </div>
-      <div id="invList"></div>
-    `;
-    const area = document.getElementById('shopArea');
-    shopAreaWidth = area.offsetWidth;
-    // re-render existing customers
-    state.customers.forEach(c => area.appendChild(c.el));
-    renderInvList();
-  }
-
-  function renderInvList() {
-    const list = document.getElementById('invList');
-    if (!list) return;
-    const items = PRODUCTS.filter(p => (state.inv[p.id] || 0) > 0);
-    list.innerHTML = items.length
-      ? '<div style="font-size:13px;opacity:0.7;margin:8px 0;">Your stock: '
-        + items.map(p => `${p.emoji} ${p.name} ×${state.inv[p.id]}`).join(' · ')
-        + '</div>'
-      : '<div class="muted" style="margin:8px 0;">No products in stock — head to Package.</div>';
-  }
-
-  function spawnCustomer() {
-    if (activeTab !== 'shop') return;
-    const area = document.getElementById('shopArea');
-    if (!area) return;
-    // pick a product the player has, or random if none
-    const stocked = PRODUCTS.filter(p => (state.inv[p.id] || 0) > 0);
-    const pool = stocked.length ? stocked : PRODUCTS;
-    const want = pool[Math.floor(Math.random() * pool.length)];
-    const emojis = ['🧑', '👩', '👨', '🧓', '👴', '👵', '🧔', '👱', '👨‍🦱', '👩‍🦰', '🧑‍🎤'];
-    const el = document.createElement('div');
-    el.className = 'customer';
-    el.innerHTML = `
-      <div class="bubble">Got a <b>${want.name}</b>?</div>
-      <div class="body">${emojis[Math.floor(Math.random() * emojis.length)]}</div>
-    `;
-    el.style.left = '-80px';
-    area.appendChild(el);
-    const c = {
-      el,
-      want,
-      x: -80,
-      targetX: 40 + Math.random() * (shopAreaWidth - 200),
-      arrived: false,
-      patience: (10000 + Math.random() * 5000) * state.patienceMult,
-      arrivedAt: 0,
-      done: false,
-    };
-    state.customers.push(c);
-    el.addEventListener('click', () => serveCustomer(c));
-  }
-
-  function serveCustomer(c) {
-    if (c.done) return;
-    const have = state.inv[c.want.id] || 0;
-    if (have < 1) {
-      toast(`No ${c.want.name} in stock!`, 'bad');
-      c.el.classList.add('angry');
-      c.el.querySelector('.bubble').innerHTML = `Out?! 😡`;
-      c.done = true;
-      state.rep = Math.max(0, state.rep - 1);
-      setTimeout(() => removeCustomer(c), 800);
-      save();
-      return;
-    }
-    state.inv[c.want.id] = have - 1;
-    const earned = c.want.price * state.priceMult;
-    state.cash += earned;
-    state.rep += 1;
-    c.el.classList.add('served');
-    c.el.querySelector('.bubble').innerHTML = `+${fmt$(earned)} 🙌`;
-    c.done = true;
-    toast(`Sold ${c.want.name} for ${fmt$(earned)} 💰`, 'gold');
-    setTimeout(() => removeCustomer(c), 700);
-    save();
-  }
-
-  function removeCustomer(c) {
-    c.el.remove();
-    state.customers = state.customers.filter(x => x !== c);
-  }
-
-  function tickCustomers() {
-    if (activeTab !== 'shop') return;
-    const now = Date.now();
-    for (const c of state.customers) {
-      if (!c.arrived) {
-        c.x += 3;
-        c.el.style.left = c.x + 'px';
-        if (c.x >= c.targetX) {
-          c.arrived = true;
-          c.arrivedAt = now;
+function cellCenter(i, j) {
+  return {
+    x: PF_BOUNDS.minX + i * PF_CELL + PF_CELL / 2,
+    z: PF_BOUNDS.minZ + j * PF_CELL + PF_CELL / 2,
+  };
+}
+function worldToCell(x, z) {
+  return {
+    i: Math.max(0, Math.min(PF_W - 1, Math.floor((x - PF_BOUNDS.minX) / PF_CELL))),
+    j: Math.max(0, Math.min(PF_H - 1, Math.floor((z - PF_BOUNDS.minZ) / PF_CELL))),
+  };
+}
+function buildPFGrid() {
+  const g = new Uint8Array(PF_W * PF_H);
+  for (let j = 0; j < PF_H; j++) {
+    for (let i = 0; i < PF_W; i++) {
+      const c = cellCenter(i, j);
+      let blocked = false;
+      for (const b of blockers) {
+        if (c.x >= b.x1 - PF_PAD && c.x <= b.x2 + PF_PAD &&
+            c.z >= b.z1 - PF_PAD && c.z <= b.z2 + PF_PAD) {
+          blocked = true; break;
         }
-      } else if (!c.done) {
-        const remaining = c.patience - (now - c.arrivedAt);
-        if (remaining < 0) {
-          // left angry
-          c.el.classList.add('angry');
-          c.el.querySelector('.bubble').innerHTML = '😒';
-          c.done = true;
-          state.rep = Math.max(0, state.rep - 1);
-          setTimeout(() => removeCustomer(c), 600);
-        }
+      }
+      g[j * PF_W + i] = blocked ? 1 : 0;
+    }
+  }
+  return g;
+}
+const pfGrid = buildPFGrid();
+
+function isCellBlocked(i, j) {
+  if (i < 0 || j < 0 || i >= PF_W || j >= PF_H) return true;
+  return pfGrid[j * PF_W + i] === 1;
+}
+function findNearestFree(i, j, maxR = 14) {
+  if (!isCellBlocked(i, j)) return { i, j };
+  for (let r = 1; r <= maxR; r++) {
+    for (let dj = -r; dj <= r; dj++) {
+      for (let di = -r; di <= r; di++) {
+        if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue;
+        if (!isCellBlocked(i + di, j + dj)) return { i: i + di, j: j + dj };
+      }
+    }
+  }
+  return { i, j };
+}
+function lineBlocked(x1, z1, x2, z2) {
+  const dx = x2 - x1, dz = z2 - z1;
+  const len = Math.hypot(dx, dz);
+  const steps = Math.max(2, Math.ceil(len / (PF_CELL * 0.5)));
+  for (let s = 1; s <= steps; s++) {
+    const t = s / steps;
+    const c = worldToCell(x1 + dx * t, z1 + dz * t);
+    if (isCellBlocked(c.i, c.j)) return true;
+  }
+  return false;
+}
+function smoothPath(pts) {
+  if (pts.length <= 2) return pts.slice();
+  const out = [pts[0]];
+  let i = 0;
+  while (i < pts.length - 1) {
+    let j = pts.length - 1;
+    while (j > i + 1) {
+      if (!lineBlocked(pts[i].x, pts[i].z, pts[j].x, pts[j].z)) break;
+      j--;
+    }
+    out.push(pts[j]);
+    i = j;
+  }
+  return out;
+}
+function findPath(sx, sz, gx, gz) {
+  // Direct line of sight — skip A*
+  if (!lineBlocked(sx, sz, gx, gz)) return [new THREE.Vector3(gx, 0, gz)];
+  const sCell = worldToCell(sx, sz);
+  const gCell = worldToCell(gx, gz);
+  const start = findNearestFree(sCell.i, sCell.j);
+  const goal  = findNearestFree(gCell.i, gCell.j);
+  if (start.i === goal.i && start.j === goal.j) {
+    return [new THREE.Vector3(gx, 0, gz)];
+  }
+  const startKey = start.i + ',' + start.j;
+  const goalKey  = goal.i  + ',' + goal.j;
+  const open = [{ i: start.i, j: start.j, f: 0 }];
+  const came = new Map();
+  const gScore = new Map();
+  gScore.set(startKey, 0);
+  const closed = new Set();
+  const dirs = [
+    [1,0,1],[-1,0,1],[0,1,1],[0,-1,1],
+    [1,1,1.4142],[1,-1,1.4142],[-1,1,1.4142],[-1,-1,1.4142],
+  ];
+  let found = false;
+  let safety = 8000;  // cap to keep things snappy
+  while (open.length && safety-- > 0) {
+    let bestIdx = 0;
+    for (let n = 1; n < open.length; n++) if (open[n].f < open[bestIdx].f) bestIdx = n;
+    const cur = open.splice(bestIdx, 1)[0];
+    const ck = cur.i + ',' + cur.j;
+    if (ck === goalKey) { found = true; break; }
+    if (closed.has(ck)) continue;
+    closed.add(ck);
+    for (const [di, dj, cost] of dirs) {
+      const ni = cur.i + di, nj = cur.j + dj;
+      if (isCellBlocked(ni, nj)) continue;
+      if (di !== 0 && dj !== 0) {
+        if (isCellBlocked(cur.i + di, cur.j) || isCellBlocked(cur.i, cur.j + dj)) continue;
+      }
+      const nk = ni + ',' + nj;
+      if (closed.has(nk)) continue;
+      const tg = (gScore.get(ck) ?? 0) + cost;
+      if (tg < (gScore.get(nk) ?? Infinity)) {
+        came.set(nk, ck);
+        gScore.set(nk, tg);
+        const h = Math.hypot(ni - goal.i, nj - goal.j);
+        open.push({ i: ni, j: nj, f: tg + h });
+      }
+    }
+  }
+  if (!found) return null;
+  // Reconstruct
+  const cells = [];
+  let k = goalKey;
+  while (k !== startKey && came.has(k)) {
+    const [pi, pj] = k.split(',').map(Number);
+    const c = cellCenter(pi, pj);
+    cells.unshift(new THREE.Vector3(c.x, 0, c.z));
+    k = came.get(k);
+  }
+  cells.unshift(new THREE.Vector3(sx, 0, sz));
+  // Append actual goal only if reachable from goal cell
+  const gw = cellCenter(goal.i, goal.j);
+  if (!lineBlocked(gw.x, gw.z, gx, gz)) {
+    cells.push(new THREE.Vector3(gx, 0, gz));
+  }
+  const smooth = smoothPath(cells);
+  smooth.shift();  // drop start (we're already there)
+  return smooth;
+}
+
+// ============================================================
+// Plots
+// ============================================================
+const plotMeshes = []; // active plot data: { group, soil, plant, x, z, planted, growth, totalGrowth, idx }
+const allPlots = [];   // all 12 grid positions (active + locked)
+
+function createPlot(idx, gx, gz) {
+  const group = new THREE.Group();
+  group.position.set(gx, 0, gz);
+  // Terracotta pot
+  const pot = new THREE.Mesh(
+    new THREE.BoxGeometry(1.7, 0.6, 1.7),
+    new THREE.MeshStandardMaterial({ color: 0xb05030, roughness: 0.85 })
+  );
+  pot.position.y = 0.3;
+  pot.castShadow = true;
+  pot.receiveShadow = true;
+  group.add(pot);
+  // Pot rim
+  const rim = new THREE.Mesh(
+    new THREE.BoxGeometry(1.85, 0.1, 1.85),
+    new THREE.MeshStandardMaterial({ color: 0x8a3d20, roughness: 0.85 })
+  );
+  rim.position.y = 0.6;
+  group.add(rim);
+  // Soil top
+  const soilTop = new THREE.Mesh(
+    new THREE.BoxGeometry(1.5, 0.04, 1.5),
+    new THREE.MeshStandardMaterial({ color: 0x2a1810, roughness: 1.0 })
+  );
+  soilTop.position.y = 0.62;
+  group.add(soilTop);
+  // Plant group on top of pot
+  const plant = new THREE.Group();
+  plant.position.y = 0.65;
+  group.add(plant);
+  world.add(group);
+
+  const data = {
+    group, soil: pot, plant,
+    x: gx, z: gz,
+    planted: null, growth: 0,
+    totalGrowth: 0,
+    idx,
+    locked: false,
+    interact: 'plot',
+  };
+  return data;
+}
+
+// Build full grid; first state.upgrades.plotCount are unlocked
+for (let r = 0; r < PLOT_GRID.rows; r++) {
+  for (let c = 0; c < PLOT_GRID.cols; c++) {
+    const gx = PLOT_GRID.originX + c * PLOT_GRID.spacing;
+    const gz = PLOT_GRID.originZ + r * PLOT_GRID.spacing;
+    const idx = r * PLOT_GRID.cols + c;
+    const p = createPlot(idx, gx, gz);
+    allPlots.push(p);
+  }
+}
+
+function refreshUnlockedPlots() {
+  allPlots.forEach((p, i) => {
+    const unlock = i < state.upgrades.plotCount;
+    p.locked = !unlock;
+    p.soil.material.color.setHex(unlock ? 0xb05030 : 0x3a2a26);
+    p.soil.material.opacity = unlock ? 1 : 0.45;
+    p.soil.material.transparent = !unlock;
+    p.group.visible = true;
+  });
+}
+
+function updatePlantVisual(plot) {
+  // Dispose old geometry to avoid leaks when re-rendering
+  while (plot.plant.children.length) {
+    const c = plot.plant.children[0];
+    plot.plant.remove(c);
+    c.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+  }
+  if (!plot.planted) return;
+  const strain = STRAIN_BY_NAME[plot.planted];
+  const ratio = Math.min(1, plot.growth / plot.totalGrowth);
+  const ready = ratio >= 1;
+  const stemH = 0.25 + ratio * 1.45;
+  const stemMat = new THREE.MeshStandardMaterial({ color: 0x355a26, roughness: 0.85 });
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0x4f9a35, roughness: 0.7 });
+  const budMat  = new THREE.MeshStandardMaterial({
+    color: strain.color,
+    emissive: ready ? strain.color : 0x000000,
+    emissiveIntensity: ready ? 0.55 : 0,
+    roughness: 0.5,
+  });
+
+  // Stem
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.07, stemH, 8), stemMat);
+  stem.position.y = stemH / 2;
+  stem.castShadow = true;
+  plot.plant.add(stem);
+
+  // Foliage levels (cones as fan-leaves)
+  const levels = Math.max(1, Math.floor(ratio * 3) + 1);
+  for (let i = 0; i < levels; i++) {
+    const t = (i + 0.45) / (levels + 0.4);
+    const yy = t * stemH;
+    const sz = 0.22 + ratio * 0.18 - i * 0.025;
+    for (let s = 0; s < 5; s++) {
+      const a = (s / 5) * Math.PI * 2 + i * 0.7;
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.07, sz, 4), leafMat);
+      leaf.position.set(Math.cos(a) * sz * 0.55, yy, Math.sin(a) * sz * 0.55);
+      leaf.rotation.set(Math.sin(a) * 0.95, 0, -Math.cos(a) * 0.95);
+      leaf.castShadow = true;
+      plot.plant.add(leaf);
+    }
+  }
+
+  // Bud cluster on top
+  const budCount = ready ? 6 : Math.max(1, Math.floor(ratio * 4));
+  for (let i = 0; i < budCount; i++) {
+    const a = (i / Math.max(1, budCount)) * Math.PI * 2;
+    const r = i === 0 ? 0 : 0.10 + ratio * 0.16;
+    const sz = 0.13 + ratio * 0.18;
+    const bud = new THREE.Mesh(new THREE.IcosahedronGeometry(sz, 1), budMat);
+    bud.position.set(Math.cos(a) * r, stemH + sz * 0.2, Math.sin(a) * r);
+    bud.castShadow = true;
+    plot.plant.add(bud);
+  }
+
+  // Halo ring on the pot rim when ready
+  if (ready) {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.85, 1.0, 28),
+      new THREE.MeshBasicMaterial({
+        color: strain.color, transparent: true, opacity: 0.55, side: THREE.DoubleSide
+      })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.02;
+    plot.plant.add(ring);
+  }
+}
+
+// ============================================================
+// Character
+// ============================================================
+function makeHumanoid({
+  shirt = 0x3a76d6, pants = 0x2a2a3a, skin = 0xe8b896, hair = 0x3a2818,
+  hat = null, hatColor = 0x55a832
+} = {}) {
+  const group = new THREE.Group();
+  const skinMat  = new THREE.MeshStandardMaterial({ color: skin,  roughness: 0.6 });
+  const shirtMat = new THREE.MeshStandardMaterial({ color: shirt, roughness: 0.7 });
+  const pantsMat = new THREE.MeshStandardMaterial({ color: pants, roughness: 0.7 });
+  const hairMat  = new THREE.MeshStandardMaterial({ color: hair,  roughness: 0.7 });
+  const shoeMat  = new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.6 });
+
+  const HIP_Y = 0.9, SHOULDER_Y = HIP_Y + 0.78, HEAD_Y = SHOULDER_Y + 0.32;
+
+  // Legs (pivot groups at hip)
+  const legGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.78, 12);
+  function makeLeg(x) {
+    const piv = new THREE.Group();
+    piv.position.set(x, HIP_Y, 0);
+    const m = new THREE.Mesh(legGeo, pantsMat);
+    m.position.y = -0.39; m.castShadow = true;
+    piv.add(m);
+    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.13, 0.36), shoeMat);
+    shoe.position.set(0, -0.835, 0.06); shoe.castShadow = true;
+    piv.add(shoe);
+    group.add(piv);
+    return piv;
+  }
+  const lleg = makeLeg(-0.13);
+  const rleg = makeLeg( 0.13);
+
+  // Torso + collar
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.4, 0.82, 16), shirtMat);
+  torso.position.y = HIP_Y + 0.4; torso.castShadow = true;
+  group.add(torso);
+  const collar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.27, 0.34, 0.1, 14),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })
+  );
+  collar.position.y = HIP_Y + 0.82;
+  group.add(collar);
+
+  // Arms (pivot groups at shoulders)
+  const armGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.74, 10);
+  function makeArm(x) {
+    const piv = new THREE.Group();
+    piv.position.set(x, SHOULDER_Y, 0);
+    const m = new THREE.Mesh(armGeo, shirtMat);
+    m.position.y = -0.37; m.castShadow = true;
+    piv.add(m);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), skinMat);
+    hand.position.y = -0.78; hand.castShadow = true;
+    piv.add(hand);
+    group.add(piv);
+    return piv;
+  }
+  const larm = makeArm(-0.46);
+  const rarm = makeArm( 0.46);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 20, 16), skinMat);
+  head.position.y = HEAD_Y; head.castShadow = true;
+  group.add(head);
+  // Hair (top half-sphere)
+  const hairMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(0.28, 18, 14, 0, Math.PI * 2, 0, Math.PI / 2),
+    hairMat
+  );
+  hairMesh.position.y = HEAD_Y; hairMesh.castShadow = true;
+  group.add(hairMesh);
+  // Eyes
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+  const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), eyeMat);
+  eye1.position.set(-0.09, HEAD_Y + 0.03, 0.255); group.add(eye1);
+  const eye2 = eye1.clone();
+  eye2.position.x = 0.09; group.add(eye2);
+
+  // Optional hat
+  if (hat === 'cap') {
+    const capMat = new THREE.MeshStandardMaterial({ color: hatColor, roughness: 0.7 });
+    const cap = new THREE.Mesh(
+      new THREE.SphereGeometry(0.29, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2.4),
+      capMat
+    );
+    cap.position.y = HEAD_Y + 0.04; cap.castShadow = true; group.add(cap);
+    const bill = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.22), capMat);
+    bill.position.set(0, HEAD_Y + 0.03, 0.26); bill.castShadow = true; group.add(bill);
+  } else if (hat === 'beanie') {
+    const beanie = new THREE.Mesh(
+      new THREE.SphereGeometry(0.30, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2.0),
+      new THREE.MeshStandardMaterial({ color: hatColor, roughness: 0.95 })
+    );
+    beanie.position.y = HEAD_Y + 0.06; beanie.castShadow = true; group.add(beanie);
+  }
+
+  return { group, parts: { lleg, rleg, larm, rarm } };
+}
+
+function animateHumanoid(parts, holder, dt, walking) {
+  if (!parts) return;
+  if (walking) holder.walkPhase = (holder.walkPhase || 0) + dt * 11;
+  const swing = walking ? Math.sin(holder.walkPhase || 0) * 0.55 : 0;
+  const arm   = walking ? Math.sin(holder.walkPhase || 0) * 0.45 : 0;
+  parts.lleg.rotation.x =  swing;
+  parts.rleg.rotation.x = -swing;
+  parts.larm.rotation.x = -arm;
+  parts.rarm.rotation.x =  arm;
+}
+
+const playerRig = makeHumanoid({
+  shirt: 0x2e7df6, pants: 0x222a3a, skin: 0xe8b896, hair: 0x2a1a10,
+  hat: 'cap', hatColor: 0x55a832
+});
+const player = playerRig.group;
+player.position.set(0, 0, 5);
+world.add(player);
+
+const playerState = {
+  path: null,        // array of THREE.Vector3 waypoints
+  action: null,      // pending action on arrival
+  walkPhase: 0,
+  parts: playerRig.parts,
+};
+
+// Movement marker
+const marker = new THREE.Mesh(
+  new THREE.RingGeometry(0.25, 0.4, 24),
+  new THREE.MeshBasicMaterial({ color: 0xffeb3b, transparent: true, opacity: 0.85, side: THREE.DoubleSide })
+);
+marker.rotation.x = -Math.PI / 2;
+marker.position.y = 0.05;
+marker.visible = false;
+world.add(marker);
+
+// ============================================================
+// Game state
+// ============================================================
+const state = {
+  money: 250,
+  reputation: 100,
+  inventory: {}, // strain -> count of harvested product
+  seeds: {},     // strain -> seed count
+  customers: [], // { group, strain, patience, served, walking, target }
+  deliveries: [],// { group, contents: {strain:count}, ready }
+  day: 1,
+  dayTime: 0,
+  dayLength: 90,
+  customerTimer: 4,
+  deliveryTimer: 6,
+  upgrades: {
+    plotCount: 4,        // unlocked plots (max 12)
+    growSpeed: 1.0,
+    deliveryRate: 1.0,   // multiplier on delivery frequency
+    customerRate: 1.0,   // multiplier on customer frequency
+    capacity: 30,
+    quality: 1.0,        // sell price multiplier
+    rareSeeds: 1.0,      // bias toward rare seeds in deliveries
+  },
+};
+STRAINS.forEach(s => { state.inventory[s.name] = 0; state.seeds[s.name] = 0; });
+// Starter seeds
+state.seeds['Green Haze'] = 4;
+state.seeds['Purple Kush'] = 1;
+
+refreshUnlockedPlots();
+
+// ============================================================
+// Customers
+// ============================================================
+function pickStrainWeighted(rareBoost = 1) {
+  const weights = STRAINS.map(s => Math.pow(s.rarity, 1 / Math.max(0.5, rareBoost)));
+  const sum = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * sum;
+  for (let i = 0; i < STRAINS.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return STRAINS[i];
+  }
+  return STRAINS[0];
+}
+
+function spawnCustomer() {
+  // Customers want a random strain regardless of stock
+  const want = pickStrainWeighted(0.9);
+  // Build a random humanoid
+  const shirts = [0xe57373, 0xba68c8, 0x4dd0e1, 0xffb74d, 0x81c784, 0xf06292, 0x9575cd, 0x4a90e2, 0xff6b6b, 0x26a69a];
+  const pantsP = [0x2a2a3a, 0x40302a, 0x303030, 0x202840, 0x4a3a2a, 0x1a1a1a];
+  const skins  = [0xe8b896, 0xc99476, 0xa97c50, 0x8a5a3a, 0xf0c79a];
+  const hairs  = [0x2a1a10, 0x3a2818, 0x5a3a20, 0x111111, 0xc8a060, 0x6b3010];
+  const hatRoll = Math.random();
+  const hatType = hatRoll < 0.25 ? 'cap' : (hatRoll < 0.45 ? 'beanie' : null);
+  const rig = makeHumanoid({
+    shirt: shirts[Math.floor(Math.random() * shirts.length)],
+    pants: pantsP[Math.floor(Math.random() * pantsP.length)],
+    skin:  skins[Math.floor(Math.random() * skins.length)],
+    hair:  hairs[Math.floor(Math.random() * hairs.length)],
+    hat: hatType,
+    hatColor: shirts[Math.floor(Math.random() * shirts.length)],
+  });
+  const group = rig.group;
+
+  // Want bubble (sprite)
+  const bubble = makeWantBubble(want);
+  bubble.position.set(0, 2.95, 0);
+  group.add(bubble);
+
+  // Spawn just outside south edge, walk to a free slot at the counter
+  const slotX = pickFreeSlot();
+  group.position.set(slotX + (Math.random() - 0.5) * 4, 0, 16);
+  world.add(group);
+
+  const cust = {
+    group, parts: rig.parts, want: want.name,
+    patience: 22 + Math.random() * 10,
+    served: false, walking: true,
+    target: new THREE.Vector3(slotX, 0, COUNTER_Z + 2),
+    bubble,
+    walkPhase: Math.random() * Math.PI * 2,
+    interact: 'customer',
+  };
+  state.customers.push(cust);
+}
+
+function pickFreeSlot() {
+  const slots = [-8, -4, 0, 4, 8];
+  const used = new Set(state.customers.filter(c => !c.walking || c.target).map(c => Math.round(c.target.x)));
+  for (const s of slots) if (!used.has(s)) return s;
+  return slots[Math.floor(Math.random() * slots.length)];
+}
+
+function makeWantBubble(strain) {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 96;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgba(0,0,0,0.85)';
+  roundRect(ctx, 0, 0, 256, 96, 22); ctx.fill();
+  // dot
+  ctx.fillStyle = '#' + strain.color.toString(16).padStart(6, '0');
+  ctx.beginPath(); ctx.arc(36, 48, 18, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 28px "Segoe UI", Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(strain.name, 64, 48);
+  const tex = new THREE.CanvasTexture(c);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+  const s = new THREE.Sprite(mat);
+  s.scale.set(3.6, 1.35, 1);
+  return s;
+}
+
+// ============================================================
+// Deliveries
+// ============================================================
+function spawnDelivery() {
+  const contents = {};
+  const totalUnits = 3 + Math.floor(Math.random() * 3) + Math.floor(state.upgrades.deliveryRate);
+  for (let i = 0; i < totalUnits; i++) {
+    const s = pickStrainWeighted(state.upgrades.rareSeeds);
+    contents[s.name] = (contents[s.name] || 0) + 1;
+  }
+  const group = new THREE.Group();
+  // Crate body
+  const crate = new THREE.Mesh(
+    new THREE.BoxGeometry(1.6, 1.2, 1.6),
+    new THREE.MeshStandardMaterial({ color: 0xa07040, roughness: 0.8 })
+  );
+  crate.position.y = 0.6;
+  crate.castShadow = true;
+  group.add(crate);
+  // Lid stripe
+  const stripe = new THREE.Mesh(
+    new THREE.BoxGeometry(1.65, 0.15, 1.65),
+    new THREE.MeshStandardMaterial({ color: 0xff9800, emissive: 0xaa5500, emissiveIntensity: 0.4 })
+  );
+  stripe.position.y = 1.2;
+  group.add(stripe);
+  // Label sprite
+  const total = Object.values(contents).reduce((a, b) => a + b, 0);
+  const label = makeLabelSprite('📦 ' + total + ' seeds');
+  label.position.set(0, 2.0, 0);
+  group.add(label);
+
+  // Position in delivery zone, random spot
+  const dx = 4 + Math.random() * 10;
+  const dz = -12 + Math.random() * 8;
+  group.position.set(dx, 0, dz);
+  world.add(group);
+
+  state.deliveries.push({ group, contents, x: dx, z: dz, interact: 'delivery' });
+  log('🚚 Delivery arrived in the dock', 'info');
+}
+
+function makeLabelSprite(txt) {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 64;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  roundRect(ctx, 0, 0, 256, 64, 16); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 30px "Segoe UI", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(txt, 128, 32);
+  const tex = new THREE.CanvasTexture(c);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+  const s = new THREE.Sprite(mat);
+  s.scale.set(3, 0.75, 1);
+  return s;
+}
+
+// ============================================================
+// Click / interaction
+// ============================================================
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+function getMouseNDC(e) {
+  const rect = canvas.getBoundingClientRect();
+  ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+}
+
+function castGround() {
+  raycaster.setFromCamera(ndc, camera);
+  const hit = new THREE.Vector3();
+  raycaster.ray.intersectPlane(groundPlane, hit);
+  return hit;
+}
+
+function nearestInteractive(point) {
+  // Returns the closest interactive within a small radius from point
+  let best = null;
+  let bestDist = 2.0; // max click radius
+  // Plots
+  for (const p of allPlots) {
+    if (p.locked) continue;
+    const d = Math.hypot(p.x - point.x, p.z - point.z);
+    if (d < bestDist) { bestDist = d; best = { type: 'plot', plot: p }; }
+  }
+  // Deliveries
+  for (const d of state.deliveries) {
+    const dd = Math.hypot(d.x - point.x, d.z - point.z);
+    if (dd < bestDist) { bestDist = dd; best = { type: 'delivery', delivery: d }; }
+  }
+  // Customers
+  for (const c of state.customers) {
+    if (c.served || c.walking) continue;
+    const tx = c.target.x, tz = c.target.z;
+    const dd = Math.hypot(tx - point.x, tz - point.z);
+    if (dd < bestDist) { bestDist = dd; best = { type: 'customer', customer: c }; }
+  }
+  return best;
+}
+
+canvas.addEventListener('click', (e) => {
+  hideSeedPicker();
+  getMouseNDC(e);
+  const hit = castGround();
+  if (!hit) return;
+  // Clamp to map
+  hit.x = Math.max(-MAP_HALF, Math.min(MAP_HALF, hit.x));
+  hit.z = Math.max(-MAP_HALF, Math.min(MAP_HALF, hit.z));
+
+  const inter = nearestInteractive(hit);
+  if (inter) {
+    setMoveTarget(interactPoint(inter), inter);
+  } else {
+    setMoveTarget(hit, null);
+  }
+});
+
+function interactPoint(inter) {
+  // Stand slightly offset from object
+  if (inter.type === 'plot') return new THREE.Vector3(inter.plot.x, 0, inter.plot.z + 1.2);
+  if (inter.type === 'delivery') return new THREE.Vector3(inter.delivery.x, 0, inter.delivery.z + 1.2);
+  if (inter.type === 'customer') return new THREE.Vector3(inter.customer.target.x, 0, inter.customer.target.z - 3);
+  return new THREE.Vector3();
+}
+
+function setMoveTarget(point, action) {
+  const path = findPath(player.position.x, player.position.z, point.x, point.z);
+  playerState.path = (path && path.length) ? path : [point.clone()];
+  playerState.action = action;
+  marker.position.set(point.x, 0.05, point.z);
+  marker.visible = true;
+}
+
+// ============================================================
+// Tooltip on hover
+// ============================================================
+const tooltip = document.getElementById('tooltip');
+canvas.addEventListener('mousemove', (e) => {
+  getMouseNDC(e);
+  const hit = castGround();
+  if (!hit) { tooltip.style.display = 'none'; return; }
+  const inter = nearestInteractive(hit);
+  if (!inter) { tooltip.style.display = 'none'; return; }
+  let text = '';
+  if (inter.type === 'plot') {
+    const p = inter.plot;
+    if (!p.planted) text = 'Empty plot — click to plant';
+    else if (p.growth >= p.totalGrowth) text = `${p.planted} — READY to harvest`;
+    else text = `${p.planted} — ${Math.floor(100 * p.growth / p.totalGrowth)}% grown`;
+  } else if (inter.type === 'delivery') {
+    const items = Object.entries(inter.delivery.contents).map(([k, v]) => `${v}× ${k}`).join(', ');
+    text = `📦 Delivery: ${items}`;
+  } else if (inter.type === 'customer') {
+    const inStock = state.inventory[inter.customer.want] > 0;
+    text = `Customer wants ${inter.customer.want}` + (inStock ? ' ✅ in stock' : ' ❌ no stock');
+  }
+  tooltip.textContent = text;
+  tooltip.style.left = (e.clientX + 14) + 'px';
+  tooltip.style.top = (e.clientY + 14) + 'px';
+  tooltip.style.display = 'block';
+});
+canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+
+// ============================================================
+// Actions on arrival
+// ============================================================
+function performAction(action) {
+  if (!action) return;
+  if (action.type === 'plot') {
+    const p = action.plot;
+    if (!p.planted) {
+      showSeedPicker(p);
+    } else if (p.growth >= p.totalGrowth) {
+      harvestPlot(p);
+    } else {
+      log(`Still growing (${Math.floor(100 * p.growth / p.totalGrowth)}%)`, 'info');
+    }
+  } else if (action.type === 'delivery') {
+    collectDelivery(action.delivery);
+  } else if (action.type === 'customer') {
+    serveCustomer(action.customer);
+  }
+}
+
+function harvestPlot(p) {
+  const total = totalInventory();
+  if (total >= state.upgrades.capacity) {
+    log('Storage full! Upgrade capacity.', 'bad');
+    return;
+  }
+  state.inventory[p.planted] = (state.inventory[p.planted] || 0) + 1;
+  log(`🌿 Harvested 1× ${p.planted}`, 'good');
+  p.planted = null;
+  p.growth = 0;
+  p.totalGrowth = 0;
+  updatePlantVisual(p);
+  refreshUI();
+}
+
+function collectDelivery(d) {
+  for (const [name, n] of Object.entries(d.contents)) {
+    state.seeds[name] = (state.seeds[name] || 0) + n;
+  }
+  const items = Object.entries(d.contents).map(([k, v]) => `${v}× ${k}`).join(', ');
+  log(`📦 Picked up: ${items}`, 'good');
+  world.remove(d.group);
+  state.deliveries = state.deliveries.filter(x => x !== d);
+  refreshUI();
+}
+
+function serveCustomer(c) {
+  if (state.inventory[c.want] > 0) {
+    state.inventory[c.want]--;
+    const strain = STRAIN_BY_NAME[c.want];
+    const earned = Math.round(strain.price * state.upgrades.quality);
+    state.money += earned;
+    state.reputation = Math.min(150, state.reputation + 1);
+    log(`💰 Sold ${c.want} for $${earned}`, 'good');
+    c.served = true;
+    c.walking = true;
+    c.target = new THREE.Vector3(c.group.position.x, 0, 18);
+    fadeOutAfter(c, 4);
+  } else {
+    log(`❌ No ${c.want} in stock — customer left`, 'bad');
+    state.reputation = Math.max(0, state.reputation - 4);
+    c.served = true;
+    c.walking = true;
+    c.target = new THREE.Vector3(c.group.position.x, 0, 18);
+    fadeOutAfter(c, 3);
+  }
+  refreshUI();
+}
+
+function fadeOutAfter(c, t) {
+  c.fadeTimer = t;
+}
+
+// ============================================================
+// Seed picker UI
+// ============================================================
+const seedPicker = document.getElementById('seedPicker');
+function showSeedPicker(plot) {
+  seedPicker.innerHTML = '';
+  const title = document.createElement('div');
+  title.className = 'seedTitle';
+  title.innerHTML = `<span class="icon">${ICON.seed}</span>Plant a Strain`;
+  seedPicker.appendChild(title);
+  let any = false;
+  for (const s of STRAINS) {
+    const have = state.seeds[s.name] || 0;
+    const btn = document.createElement('button');
+    btn.className = 'seedBtn';
+    const hex = '#' + s.color.toString(16).padStart(6, '0');
+    const sw = document.createElement('span');
+    sw.className = 'swatch';
+    sw.style.background = hex;
+    sw.style.color = hex;
+    btn.appendChild(sw);
+    const lbl = document.createElement('span');
+    lbl.className = 'seedName';
+    lbl.textContent = s.name;
+    btn.appendChild(lbl);
+    const cnt = document.createElement('span');
+    cnt.className = 'seedCount';
+    cnt.textContent = '×' + have;
+    btn.appendChild(cnt);
+    if (have <= 0) btn.disabled = true; else any = true;
+    btn.addEventListener('click', () => {
+      if (state.seeds[s.name] <= 0) return;
+      state.seeds[s.name]--;
+      plot.planted = s.name;
+      plot.totalGrowth = s.growTime;
+      plot.growth = 0;
+      updatePlantVisual(plot);
+      log(`🌱 Planted ${s.name}`, 'info');
+      hideSeedPicker();
+      refreshUI();
+    });
+    seedPicker.appendChild(btn);
+  }
+  if (!any) {
+    const empty = document.createElement('div');
+    empty.className = 'seedEmpty';
+    empty.textContent = 'No seeds — wait for the next delivery';
+    seedPicker.appendChild(empty);
+  }
+
+  // Position near player on screen
+  const screenPos = worldToScreen(player.position.clone().add(new THREE.Vector3(0, 1, 0)));
+  seedPicker.style.left = Math.min(window.innerWidth - 230, Math.max(10, screenPos.x + 30)) + 'px';
+  seedPicker.style.top  = Math.min(window.innerHeight - 220, Math.max(60, screenPos.y - 40)) + 'px';
+  seedPicker.style.display = 'block';
+}
+function hideSeedPicker() { seedPicker.style.display = 'none'; }
+
+function worldToScreen(v) {
+  const p = v.clone().project(camera);
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: rect.left + (p.x * 0.5 + 0.5) * rect.width,
+    y: rect.top + (-p.y * 0.5 + 0.5) * rect.height,
+  };
+}
+
+// ============================================================
+// UI rendering
+// ============================================================
+const invListEl = document.getElementById('invList');
+const upListEl = document.getElementById('upList');
+const statMoney = document.getElementById('statMoney');
+const statRep = document.getElementById('statRep');
+const statDay = document.getElementById('statDay');
+const statStore = document.getElementById('statStore');
+
+const UPGRADES = [
+  { id: 'plotCount', name: 'Buy Plot', desc: 'Unlock another grow plot', icon: 'plot',
+    cost: () => 150 + (state.upgrades.plotCount - 4) * 250,
+    canBuy: () => state.upgrades.plotCount < allPlots.length,
+    apply: () => { state.upgrades.plotCount++; refreshUnlockedPlots(); } },
+  { id: 'growSpeed', name: 'Fertilizer', desc: 'Plants grow +25% faster', icon: 'fertilizer',
+    cost: () => Math.round(180 * Math.pow(1.6, levelOf('growSpeed'))),
+    canBuy: () => levelOf('growSpeed') < 6,
+    apply: () => { state.upgrades.growSpeed *= 1.25; } },
+  { id: 'deliveryRate', name: 'Better Trucks', desc: 'Deliveries arrive more often', icon: 'truck',
+    cost: () => Math.round(220 * Math.pow(1.6, levelOf('deliveryRate'))),
+    canBuy: () => levelOf('deliveryRate') < 5,
+    apply: () => { state.upgrades.deliveryRate *= 1.3; } },
+  { id: 'customerRate', name: 'Marketing', desc: 'More customers visit', icon: 'megaphone',
+    cost: () => Math.round(250 * Math.pow(1.6, levelOf('customerRate'))),
+    canBuy: () => levelOf('customerRate') < 5,
+    apply: () => { state.upgrades.customerRate *= 1.3; } },
+  { id: 'capacity', name: 'Storage Rack', desc: '+15 storage capacity', icon: 'shelves',
+    cost: () => Math.round(160 * Math.pow(1.5, capLevel())),
+    canBuy: () => state.upgrades.capacity < 200,
+    apply: () => { state.upgrades.capacity += 15; } },
+  { id: 'quality', name: 'Premium Branding', desc: '+15% sale price', icon: 'crown',
+    cost: () => Math.round(400 * Math.pow(1.7, levelOf('quality'))),
+    canBuy: () => levelOf('quality') < 5,
+    apply: () => { state.upgrades.quality *= 1.15; } },
+  { id: 'rareSeeds', name: 'Exotic Connect', desc: 'Better strains in deliveries', icon: 'rare',
+    cost: () => Math.round(500 * Math.pow(1.8, levelOf('rareSeeds'))),
+    canBuy: () => levelOf('rareSeeds') < 4,
+    apply: () => { state.upgrades.rareSeeds *= 1.25; } },
+];
+function levelOf(key) {
+  // crude level deduced from current multiplier
+  const v = state.upgrades[key];
+  if (key === 'growSpeed')   return Math.round(Math.log(v) / Math.log(1.25));
+  if (key === 'deliveryRate')return Math.round(Math.log(v) / Math.log(1.3));
+  if (key === 'customerRate')return Math.round(Math.log(v) / Math.log(1.3));
+  if (key === 'quality')     return Math.round(Math.log(v) / Math.log(1.15));
+  if (key === 'rareSeeds')   return Math.round(Math.log(v) / Math.log(1.25));
+  return 0;
+}
+function capLevel() { return Math.round((state.upgrades.capacity - 30) / 15); }
+
+function totalInventory() {
+  return Object.values(state.inventory).reduce((a, b) => a + b, 0);
+}
+
+function refreshUI() {
+  statMoney.textContent = '$' + state.money;
+  statRep.textContent = Math.round(state.reputation);
+  statDay.textContent = state.day;
+  statStore.textContent = `${totalInventory()} / ${state.upgrades.capacity}`;
+
+  // Inventory rows
+  invListEl.innerHTML = '';
+  for (const s of STRAINS) {
+    const row = document.createElement('div');
+    row.className = 'invRow';
+    const hex = '#' + s.color.toString(16).padStart(6, '0');
+    const sw = document.createElement('span');
+    sw.className = 'invSwatch';
+    sw.style.background = hex;
+    sw.style.color = hex;
+    row.appendChild(sw);
+    const nm = document.createElement('span');
+    nm.className = 'invName';
+    nm.textContent = s.name;
+    row.appendChild(nm);
+    const cn = document.createElement('span');
+    cn.className = 'invCount';
+    cn.textContent = state.inventory[s.name] || 0;
+    row.appendChild(cn);
+    const seed = document.createElement('span');
+    seed.className = 'invSeed';
+    seed.innerHTML = `<span class="icon">${ICON.seed}</span>${state.seeds[s.name] || 0}`;
+    row.appendChild(seed);
+    invListEl.appendChild(row);
+  }
+
+  // Upgrades
+  upListEl.innerHTML = '';
+  for (const u of UPGRADES) {
+    const cost = u.cost();
+    const btn = document.createElement('button');
+    btn.className = 'upBtn';
+    const can = u.canBuy() && state.money >= cost;
+    btn.disabled = !can;
+
+    const iconEl = document.createElement('span');
+    iconEl.className = 'icon upIcon';
+    iconEl.innerHTML = ICON[u.icon] || '';
+    btn.appendChild(iconEl);
+
+    const main = document.createElement('div');
+    main.className = 'upMain';
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'upTitle';
+    const titleText = document.createElement('span');
+    titleText.textContent = u.name +
+      (u.id === 'plotCount' ? ` (${state.upgrades.plotCount}/${allPlots.length})` : '');
+    const priceEl = document.createElement('span');
+    priceEl.className = 'upPrice' + (u.canBuy() ? '' : ' max');
+    priceEl.textContent = u.canBuy() ? '$' + cost : 'MAX';
+    titleRow.appendChild(titleText);
+    titleRow.appendChild(priceEl);
+    main.appendChild(titleRow);
+
+    const desc = document.createElement('div');
+    desc.className = 'upDesc';
+    desc.textContent = u.desc;
+    main.appendChild(desc);
+
+    btn.appendChild(main);
+
+    btn.addEventListener('click', () => {
+      if (!u.canBuy()) return;
+      const c = u.cost();
+      if (state.money < c) { log('Not enough cash', 'bad'); return; }
+      state.money -= c;
+      u.apply();
+      log(`✨ Upgrade: ${u.name}`, 'good');
+      refreshUI();
+    });
+    upListEl.appendChild(btn);
+  }
+}
+
+// ============================================================
+// Log
+// ============================================================
+const logEl = document.getElementById('log');
+function log(msg, kind = 'info') {
+  const e = document.createElement('div');
+  e.className = 'logEntry ' + kind;
+  e.textContent = msg;
+  logEl.prepend(e);
+  setTimeout(() => e.remove(), 5200);
+  while (logEl.children.length > 6) logEl.lastChild.remove();
+}
+
+// ============================================================
+// Main loop
+// ============================================================
+const clock = new THREE.Clock();
+let raf;
+
+function tick() {
+  const dt = Math.min(0.05, clock.getDelta());
+
+  // Player movement (along pathfinding waypoints)
+  let playerWalking = false;
+  if (playerState.path && playerState.path.length) {
+    const next = playerState.path[0];
+    const dir = new THREE.Vector3().subVectors(next, player.position);
+    dir.y = 0;
+    const dist = dir.length();
+    if (dist < 0.15) {
+      player.position.copy(next);
+      playerState.path.shift();
+      if (playerState.path.length === 0) {
+        marker.visible = false;
+        const act = playerState.action;
+        playerState.action = null;
+        playerState.path = null;
+        performAction(act);
+      }
+    } else {
+      dir.normalize().multiplyScalar(Math.min(dist, CHAR_SPEED * dt));
+      player.position.add(dir);
+      player.rotation.y = Math.atan2(dir.x, dir.z);
+      playerWalking = true;
+    }
+  }
+  animateHumanoid(playerState.parts, playerState, dt, playerWalking);
+
+  // Plots: grow
+  for (const p of allPlots) {
+    if (p.planted && p.growth < p.totalGrowth) {
+      p.growth += dt * state.upgrades.growSpeed;
+      const ratio = Math.min(1, p.growth / p.totalGrowth);
+      // Update visual occasionally for performance
+      if (!p._lastRatio || Math.abs(ratio - p._lastRatio) > 0.04 || ratio === 1) {
+        p._lastRatio = ratio;
+        updatePlantVisual(p);
       }
     }
   }
 
-  // ===== Upgrades =====
-  function renderUpgrades() {
-    panel.innerHTML = `
-      <div class="muted" style="margin-bottom:12px;">Spend cash to expand the operation.</div>
-      <div id="upList"></div>
-    `;
-    const list = document.getElementById('upList');
-    UPGRADES.forEach(u => {
-      const lvl = state.upgradeLevels[u.id] || 0;
-      const cost = Math.floor(u.cost * Math.pow(1.5, lvl));
-      const card = document.createElement('div');
-      card.className = 'upgrade-card';
-      const maxed = lvl >= u.max;
-      card.innerHTML = `
-        <div class="title">${u.name} ${u.max > 1 ? `<span class="pill">Lv ${lvl}/${u.max}</span>` : ''}</div>
-        <div class="desc">${u.desc}</div>
-        <button class="btn" ${maxed || state.cash < cost ? 'disabled' : ''} data-uid="${u.id}">
-          ${maxed ? 'Maxed' : `Buy — ${fmt$(cost)}`}
-        </button>
-      `;
-      list.appendChild(card);
-    });
-    list.addEventListener('click', e => {
-      const b = e.target.closest('button[data-uid]');
-      if (!b) return;
-      const u = UPGRADES.find(x => x.id === b.dataset.uid);
-      const lvl = state.upgradeLevels[u.id] || 0;
-      const cost = Math.floor(u.cost * Math.pow(1.5, lvl));
-      if (lvl >= u.max || state.cash < cost) return;
-      state.cash -= cost;
-      state.upgradeLevels[u.id] = lvl + 1;
-      u.apply(state);
-      toast(`Bought ${u.name}! 🎉`, 'gold');
-      save(); render();
-    });
-  }
-
-  function render() {
-    updateStats();
-    if (activeTab === 'grow') renderGrow();
-    else if (activeTab === 'pack') renderPack();
-    else if (activeTab === 'shop') renderShop();
-    else if (activeTab === 'upgrades') renderUpgrades();
-  }
-
-  // ===== Game loop =====
-  function tick() {
-    const now = Date.now();
-    // Grow tab progress refresh
-    if (activeTab === 'grow') {
-      // Update progress bars cheaply without full re-render every frame
-      const grid = document.getElementById('potsGrid');
-      if (grid) {
-        state.pots.forEach((pot, i) => {
-          const cell = grid.children[i];
-          if (!cell) return;
-          const stage = stageOf(pot);
-          const stageInfo = STAGES[stage];
-          let progress = 0;
-          if (stage > 0 && stage < 4) {
-            const elapsed = now - pot.plantedAt;
-            let cum = 0;
-            for (let s = 1; s <= stage - 1; s++) cum += STAGES[s].dur / state.growthMult;
-            const stageDur = STAGES[stage].dur / state.growthMult;
-            progress = ((elapsed - cum) / stageDur) * 100;
-          } else if (stage === 4) progress = 100;
-          const bar = cell.querySelector('.progress > div');
-          if (bar) bar.style.width = progress + '%';
-          const plantEl = cell.querySelector('.plant');
-          if (plantEl) plantEl.textContent = stageInfo.emoji;
-          const stEl = cell.querySelector('.stage');
-          if (stEl) stEl.textContent = pot.stage === 0 ? 'Empty pot' : stageInfo.name;
-          cell.classList.toggle('ready', stage === 4);
-          cell.classList.toggle('empty', pot.stage === 0);
-        });
+  // Customers
+  for (const c of [...state.customers]) {
+    // Walking phase
+    let custWalking = false;
+    if (c.walking) {
+      const d = new THREE.Vector3().subVectors(c.target, c.group.position); d.y = 0;
+      const dist = d.length();
+      if (dist < 0.1) {
+        c.walking = false;
+        c.group.position.copy(c.target);
+      } else {
+        d.normalize().multiplyScalar(Math.min(dist, 4.5 * dt));
+        c.group.position.add(d);
+        c.group.rotation.y = Math.atan2(d.x, d.z);
+        custWalking = true;
       }
     }
-
-    // Customer spawn and tick
-    const spawnInterval = 6000 / state.customerRateMult;
-    if (now - lastCustomerSpawn > spawnInterval && state.customers.length < 5) {
-      lastCustomerSpawn = now;
-      spawnCustomer();
+    animateHumanoid(c.parts, c, dt, custWalking);
+    if (!c.served && !c.walking) {
+      c.patience -= dt;
+      // bubble bob
+      c.bubble.position.y = 2.95 + Math.sin(performance.now() * 0.004 + c.group.id) * 0.1;
+      if (c.patience <= 0) {
+        log(`😠 ${c.want} customer left angry`, 'bad');
+        state.reputation = Math.max(0, state.reputation - 6);
+        c.served = true;
+        c.walking = true;
+        c.target = new THREE.Vector3(c.group.position.x, 0, 18);
+        c.fadeTimer = 2;
+        refreshUI();
+      }
     }
-    tickCustomers();
-
-    // Day counter — every 60s in-game
-    if (!state._dayStart) state._dayStart = now;
-    if (now - state._dayStart >= 60_000) {
-      state.day++;
-      state._dayStart = now;
-      updateStats();
-      save();
+    // Removal
+    if (c.fadeTimer !== undefined) {
+      c.fadeTimer -= dt;
+      if (c.fadeTimer <= 0) {
+        world.remove(c.group);
+        state.customers = state.customers.filter(x => x !== c);
+      }
     }
-
-    updateStats();
   }
 
-  setInterval(tick, 100);
-  render();
+  // Spawners
+  state.customerTimer -= dt * state.upgrades.customerRate;
+  if (state.customerTimer <= 0) {
+    state.customerTimer = 7 + Math.random() * 6;
+    if (state.customers.length < 6) spawnCustomer();
+  }
+  state.deliveryTimer -= dt * state.upgrades.deliveryRate;
+  if (state.deliveryTimer <= 0) {
+    state.deliveryTimer = 14 + Math.random() * 8;
+    if (state.deliveries.length < 3) spawnDelivery();
+  }
 
-  // Save on visibility change so we don't lose much
-  document.addEventListener('visibilitychange', save);
-  window.addEventListener('beforeunload', save);
-})();
+  // Day clock
+  state.dayTime += dt;
+  if (state.dayTime >= state.dayLength) {
+    state.dayTime = 0;
+    state.day++;
+    log(`📅 Day ${state.day} begins`, 'info');
+    // small daily passive bonus based on reputation
+    const bonus = Math.round(state.reputation * 0.4);
+    if (bonus > 0) {
+      state.money += bonus;
+      log(`💵 Reputation bonus: $${bonus}`, 'good');
+    }
+    refreshUI();
+  }
+
+  controls.update();
+  composer.render();
+  raf = requestAnimationFrame(tick);
+}
+
+// ============================================================
+// Camera recenter (button + R hotkey)
+// ============================================================
+const recenterBtn = document.getElementById('recenterBtn');
+if (recenterBtn) recenterBtn.addEventListener('click', () => controls.reset());
+window.addEventListener('keydown', (e) => {
+  if ((e.key === 'r' || e.key === 'R') &&
+      !e.ctrlKey && !e.metaKey && !e.altKey &&
+      e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    controls.reset();
+  }
+});
+
+// ============================================================
+// Boot
+// ============================================================
+log('Welcome to Bud Tycoon — click to walk around', 'info');
+log('Drag to rotate · Scroll to zoom · Press R to recenter', 'info');
+refreshUI();
+tick();
 </script>
 </body>
 </html>
