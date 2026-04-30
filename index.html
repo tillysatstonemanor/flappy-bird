@@ -373,9 +373,8 @@
           body: JSON.stringify({ name, score, skin: skinPayload, token: runToken }),
         });
         const data = await res.json().catch(() => ({}));
-        // Token is always consumed (success or fail); pre-fetch the next one.
+        // Token is always consumed; the next game's first flap will fetch a new one.
         runToken = null;
-        ensureToken();
         if (!res.ok) {
           const reason = data.error || ('http ' + res.status);
           if (res.status === 400 && reason === 'too fast') {

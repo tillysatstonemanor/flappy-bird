@@ -14,8 +14,9 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
 const MAX_NAME = 16;
 const MAX_ENTRIES = 100;
 const MAX_SCORE = 500;
-const MS_PER_SCORE = 1300;       // a pipe takes ~1.5s; allow grace
-const MS_OVERHEAD = 1500;        // initial pre-first-pipe time
+const MS_PER_SCORE = 800;        // generous grace below pipe rate (~1.58s)
+const MS_OVERHEAD = 0;           // no fixed overhead — page-load buffer covers it
+const NO_TOKEN_MAX = 8;          // small scores skip the token check entirely
 const MS_SESSION_TTL = 30 * 60_000;
 const RATE_WINDOW_MS = 60_000;
 const RATE_MAX = 30;             // any endpoint, per IP per min
@@ -154,7 +155,7 @@ app.post('/api/scores', (req, res) => {
   }
 
   // Server-side timing check via session token.
-  if (score > 3) {
+  if (score > NO_TOKEN_MAX) {
     if (typeof token !== 'string' || !sessions.has(token)) {
       return res.status(400).json({ error: 'invalid or missing session' });
     }
