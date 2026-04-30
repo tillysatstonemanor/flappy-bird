@@ -350,19 +350,45 @@
     renderLeaderboard();
   }
 
+  // Pre-fetch a session token so it's ready before the player finishes.
+  function ensureToken() {
+    if (runToken) return Promise.resolve(runToken);
+    return fetch(API_BASE + '/api/session', { method: 'POST' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && d.token) runToken = d.token; return runToken; })
+      .catch(() => null);
+  }
+  ensureToken();
+
   async function submitScore(score) {
     const name = (nameInput.value || '').trim().slice(0, 16) || 'Anon';
     const skinPayload = { color: skin.color, style: skin.style, hat: skin.hat };
     if (lb.online) {
+      // Make sure we have a token; if the page-load fetch failed, try again now.
+      if (!runToken) await ensureToken();
       try {
         const res = await fetch(API_BASE + '/api/scores', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, score, skin: skinPayload, token: runToken }),
         });
-        if (!res.ok) throw new Error('http ' + res.status);
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
+        // Token is always consumed (success or fail); pre-fetch the next one.
+        runToken = null;
+        ensureToken();
+        if (!res.ok) {
+          const reason = data.error || ('http ' + res.status);
+          if (res.status === 400 && reason === 'too fast') {
+            lbStatusEl.textContent = 'rejected: too fast (anti-cheat)';
+          } else if (reason.includes('session')) {
+            lbStatusEl.textContent = 'rejected: ' + reason + ' — try again';
+          } else {
+            lbStatusEl.textContent = 'rejected: ' + reason;
+          }
+          return;
+        }
         lb.list = data.top || [];
+        lbStatusEl.textContent = 'online · global scores';
         renderLeaderboard(name, score);
         return;
       } catch {
@@ -715,12 +741,8 @@
     if (state === STATE_READY) {
       state = STATE_PLAY;
       runStartedAt = Date.now();
-      // Request a server-side play session so anti-cheat can verify duration.
-      runToken = null;
-      fetch(API_BASE + '/api/session', { method: 'POST' })
-        .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d && d.token) runToken = d.token; })
-        .catch(() => {});
+      // Make sure a session token is available (it's pre-fetched at load too).
+      ensureToken();
     }
     if (state === STATE_PLAY) {
       bird.v = FLAP;
